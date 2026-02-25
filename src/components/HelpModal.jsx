@@ -66,15 +66,15 @@ export default function HelpModal({ isOpen, onClose }) {
               </div>
               <div className="rounded-xl border border-white/10 bg-[#252338] p-4">
                 <p className="font-heading text-white">Final Score Formula</p>
-                <p className="mt-1 font-mono text-[#4d96ff]">Score = Wallet Balance + (Average Stats × 2)</p>
-                <p className="mt-2">Example: $150 wallet + (75 avg stats × 2) = 150 + 150 = <strong className="text-white">300 points</strong></p>
+                <p className="mt-1 font-mono text-[#4d96ff]">Score = Wallet Balance + (Average Stats x 2)</p>
+                <p className="mt-2">Example: $150 wallet + (75 avg stats x 2) = 150 + 150 = <strong className="text-white">300 points</strong></p>
               </div>
               <div className="rounded-xl border border-white/10 bg-[#252338] p-4">
                 <p className="font-heading text-white">Weekly Salary System</p>
-                <p className="mt-1">Every week, you receive a salary — but only if your pet is healthy:</p>
+                <p className="mt-1">Every week, you receive a salary, but only if your pet is healthy:</p>
                 <ul className="mt-2 space-y-1 pl-3">
-                  <li><span className="text-[#6bcb77]">Health ≥ 70:</span> $30 salary (Healthy!)</li>
-                  <li><span className="text-[#ffd93d]">Health 40–69:</span> $15 salary (Struggling)</li>
+                  <li><span className="text-[#6bcb77]">Health &gt;= 70:</span> $30 salary (Healthy)</li>
+                  <li><span className="text-[#ffd93d]">Health 40-69:</span> $15 salary (Struggling)</li>
                   <li><span className="text-[#ff6b6b]">Health &lt; 40:</span> $0 salary (Too sick!)</li>
                 </ul>
               </div>
@@ -92,7 +92,8 @@ export default function HelpModal({ isOpen, onClose }) {
               <p>Each week, $20 in bills are charged and a salary is paid based on pet health.</p>
               <p>Play minigames to earn extra income when your budget gets tight.</p>
               <p>After 12 weeks, your final score determines your rank on the leaderboard.</p>
-              <p>Teach your pet tricks, earn badges, and watch it evolve from baby → teen → adult!</p>
+              <p>Teach your pet tricks, earn badges, and watch it evolve from baby -&gt; teen -&gt; adult.</p>
+              <p>Validation is visible in the UI: setup names show inline messages and unaffordable actions are disabled.</p>
             </div>
           )}
 
@@ -101,7 +102,7 @@ export default function HelpModal({ isOpen, onClose }) {
               <p><strong className="text-white">Hunger:</strong> Drops every few seconds. Feed your pet to restore it. If it hits zero, health suffers.</p>
               <p><strong className="text-white">Happiness:</strong> Boost with play sessions or premium meals. Low happiness = sad pet.</p>
               <p><strong className="text-white">Energy:</strong> Drained by playing. Rest to recover. Tired pets can't stay energetic.</p>
-              <p><strong className="text-white">Health:</strong> Erodes when hunger or hygiene are low. Vet visits restore health — CRITICAL for salary!</p>
+              <p><strong className="text-white">Health:</strong> Erodes when hunger or hygiene are low. Vet visits restore health - critical for salary.</p>
               <p><strong className="text-white">Hygiene:</strong> Drops slowly. Use "Clean" to prevent health penalties.</p>
               <p className="rounded-xl border border-[#ff6b6b]/30 bg-[#ff6b6b]/10 p-3">
                 <strong className="text-[#ff6b6b]">Warning:</strong> When any stat hits below 25, your pet is struggling. Below 20 health triggers a crisis!
@@ -124,23 +125,23 @@ export default function HelpModal({ isOpen, onClose }) {
               <p>Play minigames from the Finance panel to earn extra money. Each has unique mechanics:</p>
               <div className="space-y-2">
                 <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
-                  <p className="font-heading text-white">🍎 Food Catcher</p>
+                  <p className="font-heading text-white">Food Catcher</p>
                   <p className="text-xs mt-1">Catch falling food with arrow keys. Avoid poison pills. 3 lives. Score 20+ for max $15.</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
-                  <p className="font-heading text-white">🃏 Memory Match</p>
+                  <p className="font-heading text-white">Memory Match</p>
                   <p className="text-xs mt-1">Flip cards to find pet care item pairs. 60-second timer. Each pair = $2, max $16.</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
-                  <p className="font-heading text-white">🐾 Reflex Tap</p>
+                  <p className="font-heading text-white">Reflex Tap</p>
                   <p className="text-xs mt-1">Click the glowing paw before it vanishes. Gets faster with hits. 15 rounds, max $15.</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
-                  <p className="font-heading text-white">🧮 Budget Blitz</p>
+                  <p className="font-heading text-white">Budget Blitz</p>
                   <p className="text-xs mt-1">Answer 10 pet budget math questions in 8 seconds each. $2/correct, max $20.</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
-                  <p className="font-heading text-white">🎯 Care Sequence</p>
+                  <p className="font-heading text-white">Care Sequence</p>
                   <p className="text-xs mt-1">Watch and repeat care action sequences (Simon Says). 5 rounds, $3/round, max $15.</p>
                 </div>
               </div>
@@ -163,7 +164,7 @@ export default function HelpModal({ isOpen, onClose }) {
 
           {activeTab === 'Tips' && (
             <div className="space-y-3">
-              <p>Prioritize health above all — it determines your weekly salary AND final score.</p>
+              <p>Prioritize health above all - it determines your weekly salary and final score.</p>
               <p>Schedule vet visits early. Waiting until health is critical wastes multiple salary cycles.</p>
               <p>Balance short-term pet care costs with long-term wallet preservation. Overspending tanks your score.</p>
               <p>Use minigames when you're low on funds, especially Budget Blitz for reliable $20 earnings.</p>

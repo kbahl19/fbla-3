@@ -55,6 +55,46 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
       .reduce((sum, e) => sum + Math.abs(e.cost), 0);
   }, [financeState.expenses]);
 
+  const reportAnalytics = useMemo(() => {
+    const actionCounts = petState.actionLog.reduce((acc, entry) => {
+      acc[entry.action] = (acc[entry.action] || 0) + 1;
+      return acc;
+    }, {});
+
+    const biggestExpense = financeState.expenses
+      .filter((e) => e.cost > 0)
+      .reduce((max, current) => (current.cost > (max?.cost || 0) ? current : max), null);
+
+    const totalBills = financeState.expenses
+      .filter((e) => e.category === 'bills')
+      .reduce((sum, e) => sum + e.cost, 0);
+
+    const totalIncome = financeState.expenses
+      .filter((e) => e.category === 'income')
+      .reduce((sum, e) => sum + Math.abs(e.cost), 0);
+
+    const actionRows = [
+      ['Feed', actionCounts.feed || 0],
+      ['Play', actionCounts.play || 0],
+      ['Rest', actionCounts.rest || 0],
+      ['Clean', actionCounts.clean || 0],
+      ['Health Check', actionCounts.vet || 0],
+      ['Teach Trick', actionCounts.trick || 0]
+    ];
+
+    const insights = [];
+    if ((actionCounts.vet || 0) === 0) insights.push('No health checks were recorded. Vet visits usually protect salary income.');
+    if ((actionCounts.clean || 0) < 2) insights.push('Cleaning was used rarely. Low hygiene can reduce health over time.');
+    if (financeState.wallet < 0) insights.push('The session ended in debt. Spending pace exceeded salary and minigame income.');
+    if (financeState.savingsGoal && financeState.wallet >= financeState.savingsGoal) insights.push('Savings goal was achieved while completing pet care.');
+    if ((petState.mood === 'happy' || petState.mood === 'energetic') && petState.health >= 70) {
+      insights.push(`Final pet reaction was ${petState.mood} with healthy stats, showing strong care balance.`);
+    }
+    if (insights.length === 0) insights.push('Care and spending stayed balanced overall, with no major risk pattern detected.');
+
+    return { actionRows, biggestExpense, totalBills, totalIncome, insights };
+  }, [petState.actionLog, petState.mood, petState.health, financeState.expenses, financeState.wallet, financeState.savingsGoal]);
+
   const handleSave = () => {
     if (saved) return;
     const entry = {
@@ -87,7 +127,7 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
           <div>
             <h2 className="font-heading text-3xl text-[#ffd93d]">12-Week Final Report</h2>
             <p className="text-sm text-[#a7a9be]">
-              {petState.ownerName} & {petState.name} · {weeksPlayed} weeks played
+              {petState.ownerName} and {petState.name} | {weeksPlayed} weeks played
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -124,7 +164,7 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
             <span>+</span>
             <span>Avg Stats ({avgStat}/100): <span className="text-white">+{avgStat * 2} pts</span></span>
           </div>
-          <p className="mt-2 text-xs text-[#a7a9be]">Score formula: wallet + (average stats × 2)</p>
+          <p className="mt-2 text-xs text-[#a7a9be]">Score formula: wallet + (average stats x 2)</p>
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -195,6 +235,45 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
           </div>
         </div>
 
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-[#252338] p-5">
+            <h3 className="font-heading text-xl text-white">Care Activity Analysis</h3>
+            <div className="mt-4 grid gap-2 text-sm text-[#a7a9be]">
+              {reportAnalytics.actionRows.map(([label, count]) => (
+                <div key={label} className="flex items-center justify-between rounded-lg bg-[#1a1828] px-3 py-2">
+                  <span>{label}</span>
+                  <span className="text-white">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-[#252338] p-5">
+            <h3 className="font-heading text-xl text-white">Decision Insights</h3>
+            <div className="mt-4 grid gap-3 text-sm text-[#a7a9be]">
+              <div className="rounded-lg bg-[#1a1828] px-3 py-2">
+                Biggest expense:{' '}
+                <span className="text-white">
+                  {reportAnalytics.biggestExpense
+                    ? `${reportAnalytics.biggestExpense.item} (${formatCurrency(reportAnalytics.biggestExpense.cost)})`
+                    : 'None'}
+                </span>
+              </div>
+              <div className="rounded-lg bg-[#1a1828] px-3 py-2">
+                Total weekly bills: <span className="text-white">{formatCurrency(reportAnalytics.totalBills)}</span>
+              </div>
+              <div className="rounded-lg bg-[#1a1828] px-3 py-2">
+                Total salary + minigame income: <span className="text-white">{formatCurrency(reportAnalytics.totalIncome)}</span>
+              </div>
+              {reportAnalytics.insights.map((insight) => (
+                <p key={insight} className="rounded-lg border border-white/10 bg-[#1a1828] px-3 py-2">
+                  {insight}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Expense breakdown */}
         <div className="mt-6 rounded-2xl border border-white/10 bg-[#252338] p-5">
           <h3 className="font-heading text-xl text-white">Expense Breakdown</h3>
@@ -217,7 +296,7 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
         </div>
 
         <p className="mt-4 text-sm text-[#a7a9be]">
-          Real pet ownership costs $500–$2,000+ annually. Financial planning for your pet is just as important as caring for it.
+          Real pet ownership costs $500-$2,000+ annually. Financial planning for your pet is just as important as daily care.
         </p>
 
         {/* Tricks earned */}
@@ -270,3 +349,4 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
     </div>
   );
 }
+

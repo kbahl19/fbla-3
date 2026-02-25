@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { deriveMood, getEvolutionStage, clampStat } from '../utils/helpers';
-import { validateItemCost, validateStatChange } from '../utils/validators';
+import { validateItemCost, validateStatChange, validateTrickName } from '../utils/validators';
 
 const BASE_STATS = {
   hunger: 80,
@@ -343,13 +343,9 @@ export default function usePet(initialConfig, wallet) {
     const affordability = validateItemCost(PET_ACTIONS.trickCost, wallet);
     if (!affordability.valid) return affordability;
 
+    const trickValidation = validateTrickName(trickName, petState.tricks);
+    if (!trickValidation.valid) return trickValidation;
     const trimmed = String(trickName || '').trim();
-    if (!trimmed) {
-      return { valid: false, error: 'Trick name cannot be empty.' };
-    }
-    if (petState.tricks.some((trick) => trick.toLowerCase() === trimmed.toLowerCase())) {
-      return { valid: false, error: 'That trick is already known.' };
-    }
 
     setPetState((prev) => ({
       ...prev,
@@ -384,7 +380,7 @@ export default function usePet(initialConfig, wallet) {
   const resetPet = () => {
     const validation = validateStatChange(0, 0);
     if (!validation.valid) return;
-    setPetState({ ...initialRef.current, actionLog: [] });
+    setPetState({ ...initialRef.current, tricks: [], actionLog: [] });
   };
 
   const petStateMemo = useMemo(() => petState, [petState]);

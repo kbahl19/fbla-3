@@ -308,7 +308,7 @@ export default function App() {
           />
         </div>
         <p className="mt-2 text-xs text-[#a7a9be]">
-          Goal: After 12 weeks, highest score wins. Score = wallet + pet health stats × 2. Keep your pet healthy to earn your weekly salary!
+          Goal: After 12 weeks, highest score wins. Score = wallet + average pet stats x 2. Keep your pet healthy to earn your weekly salary.
         </p>
       </div>
 

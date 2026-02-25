@@ -11,6 +11,8 @@ export default function SetupScreen({ onStart }) {
   const [ownerName, setOwnerName] = useState('');
   const [petType, setPetType] = useState(PETS[0]?.id || 'dog');
   const [errors, setErrors] = useState({});
+  const liveOwnerValidation = validateOwnerName(ownerName);
+  const livePetValidation = validatePetName(petName);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -45,7 +47,7 @@ export default function SetupScreen({ onStart }) {
           <div className="mt-3 grid gap-2 text-sm text-[#a7a9be] sm:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
               <p className="font-semibold text-white">Weekly Salary</p>
-              <p className="mt-1 text-xs">Keep your pet healthy to earn income each week. Health ≥70: $30 · Health 40–69: $15 · Health &lt;40: $0</p>
+              <p className="mt-1 text-xs">Keep your pet healthy to earn income each week. Health &gt;= 70: $30 | Health 40-69: $15 | Health &lt; 40: $0</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
               <p className="font-semibold text-white">Weekly Bills</p>
@@ -53,7 +55,7 @@ export default function SetupScreen({ onStart }) {
             </div>
             <div className="rounded-xl border border-white/10 bg-[#252338] p-3">
               <p className="font-semibold text-white">Final Score</p>
-              <p className="mt-1 text-xs">After week 12, your score = wallet balance + (average pet stats × 2). Highest score wins!</p>
+              <p className="mt-1 text-xs">After week 12, your score = wallet balance + (average pet stats x 2). Highest score wins.</p>
             </div>
           </div>
           <p className="mt-3 text-xs text-[#a7a9be]">
@@ -68,9 +70,15 @@ export default function SetupScreen({ onStart }) {
               <input
                 value={ownerName}
                 onChange={(event) => setOwnerName(event.target.value)}
+                maxLength={30}
                 className="rounded-xl border border-white/10 bg-[#252338] px-4 py-3 text-white outline-none focus:border-[#4d96ff]"
                 placeholder="Your name"
               />
+              <p className={`text-xs ${ownerName.trim() && !liveOwnerValidation.valid ? 'text-[#ff6b6b]' : 'text-[#a7a9be]'}`}>
+                {ownerName.trim()
+                  ? (liveOwnerValidation.valid ? 'Valid owner name.' : liveOwnerValidation.error)
+                  : 'Required. Syntactic validation allows letters, numbers, spaces, apostrophes, periods, and hyphens.'}
+              </p>
               {errors.ownerName && <p className="text-sm text-[#ff6b6b]">{errors.ownerName}</p>}
             </div>
             <div className="grid gap-3">
@@ -78,9 +86,15 @@ export default function SetupScreen({ onStart }) {
               <input
                 value={petName}
                 onChange={(event) => setPetName(event.target.value)}
+                maxLength={20}
                 className="rounded-xl border border-white/10 bg-[#252338] px-4 py-3 text-white outline-none focus:border-[#4d96ff]"
                 placeholder="e.g. Nova"
               />
+              <p className={`text-xs ${petName.trim() && !livePetValidation.valid ? 'text-[#ff6b6b]' : 'text-[#a7a9be]'}`}>
+                {petName.trim()
+                  ? (livePetValidation.valid ? 'Valid pet name.' : livePetValidation.error)
+                  : 'Required. Syntactic validation: letters/numbers/spaces only, max 20 characters.'}
+              </p>
               {errors.petName && <p className="text-sm text-[#ff6b6b]">{errors.petName}</p>}
             </div>
           </div>
@@ -113,8 +127,8 @@ export default function SetupScreen({ onStart }) {
                 <p className="mt-1 font-heading text-2xl text-[#6bcb77]">$200.00</p>
               </div>
               <div className="grid gap-1 text-right text-xs text-[#a7a9be]">
-                <p>12 weeks · $20/wk in bills</p>
-                <p className="text-[#6bcb77]">Earn $15–$30/wk salary (if pet is healthy)</p>
+                <p>12 weeks | $20/wk in bills</p>
+                <p className="text-[#6bcb77]">Earn $15-$30/wk salary (if pet is healthy)</p>
                 <p className="text-[#4d96ff]">Bonus income via minigames</p>
               </div>
             </div>
@@ -131,3 +145,4 @@ export default function SetupScreen({ onStart }) {
     </div>
   );
 }
+

@@ -81,6 +81,9 @@ export function validateSavingsGoal(goal, budget) {
   if (goal > budget) {
     return { valid: false, error: 'Savings goal cannot exceed the budget.' };
   }
+  if (!Number.isInteger(goal)) {
+    return { valid: false, error: 'Savings goal must be a whole dollar amount.' };
+  }
   return { valid: true, error: null };
 }
 
@@ -96,6 +99,26 @@ export function validateOwnerName(name) {
   }
   if (trimmed.length > 30) {
     return { valid: false, error: 'Owner name must be 30 characters or less.' };
+  }
+  if (!/^[a-zA-Z0-9 .'-]+$/.test(trimmed)) {
+    return { valid: false, error: "Use letters, numbers, spaces, apostrophes, periods, or hyphens only." };
+  }
+  return { valid: true, error: null };
+}
+
+export function validateTrickName(trickName, existingTricks = []) {
+  const trimmed = String(trickName || '').trim();
+  if (!trimmed) {
+    return { valid: false, error: 'Trick name is required.' };
+  }
+  if (trimmed.length > 20) {
+    return { valid: false, error: 'Trick name must be 20 characters or less.' };
+  }
+  if (!/^[a-zA-Z0-9 .'-]+$/.test(trimmed)) {
+    return { valid: false, error: 'Use letters, numbers, spaces, apostrophes, periods, or hyphens only.' };
+  }
+  if (existingTricks.some((trick) => trick.toLowerCase() === trimmed.toLowerCase())) {
+    return { valid: false, error: 'That trick is already known.' };
   }
   return { valid: true, error: null };
 }

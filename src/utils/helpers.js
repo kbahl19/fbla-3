@@ -103,12 +103,12 @@ export function calculateAvgStat(petState) {
 }
 
 /**
- * Final score = wallet value + avgStat × 3.
+ * Final score = wallet value + avgStat x 2.
  * @param {{ hunger, happiness, health, energy, hygiene }} petState
  * @param {{ wallet: number }} financeState
  * @returns {number}
  */
 export function calculateScore(petState, financeState) {
   const avg = calculateAvgStat(petState);
-  return Math.round(Math.max(0, financeState.wallet) + avg * 3);
+  return Math.round(Math.max(0, financeState.wallet) + avg * 2);
 }

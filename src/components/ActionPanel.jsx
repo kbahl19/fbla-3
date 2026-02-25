@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { FOOD_ITEMS, TOY_ITEMS, VET_OPTIONS } from '../data/items';
-import { validateItemCost } from '../utils/validators';
+import { validateItemCost, validateTrickName } from '../utils/validators';
 import { formatCurrency } from '../utils/helpers';
 import { PET_ACTIONS } from '../hooks/usePet';
 
@@ -24,6 +24,8 @@ export default function ActionPanel({
   const [trickName, setTrickName] = useState('');
   const canAffordTrick = validateItemCost(PET_ACTIONS.trickCost, financeState.wallet).valid;
   const canAffordClean = validateItemCost(PET_ACTIONS.cleanCost, financeState.wallet).valid;
+  const trickValidation = validateTrickName(trickName, petState.tricks);
+  const canTeachTrick = canAffordTrick && trickValidation.valid;
 
   const handleTrick = () => {
     const result = onLearnTrick(trickName);
@@ -139,19 +141,32 @@ export default function ActionPanel({
               <input
                 value={trickName}
                 onChange={(event) => setTrickName(event.target.value)}
+                maxLength={20}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-[#1a1828] px-3 py-2 text-white outline-none focus:border-[#4d96ff]"
                 placeholder="e.g. Spin"
               />
-            <button
-              type="button"
-              onClick={handleTrick}
-              disabled={!canAffordTrick}
-              className="mt-4 w-full rounded-xl bg-[#ffd93d] px-4 py-3 font-heading text-[#1a1828] transition hover:scale-[1.01] active:scale-[0.99]"
-            >
-              Teach Trick ({formatCurrency(PET_ACTIONS.trickCost)})
-            </button>
-            {!canAffordTrick && <p className="mt-2 text-xs text-[#ff6b6b]">Can't afford</p>}
-          </div>
+              <p className={`mt-2 text-xs ${trickName.trim() && !trickValidation.valid ? 'text-[#ff6b6b]' : 'text-[#a7a9be]'}`}>
+                {trickName.trim()
+                  ? (trickValidation.valid ? 'Valid trick name. Cost applies only when taught.' : trickValidation.error)
+                  : 'Syntactic validation: 1-20 chars; letters/numbers/basic punctuation.'}
+              </p>
+              <button
+                type="button"
+                onClick={handleTrick}
+                disabled={!canTeachTrick}
+                className={`mt-4 w-full rounded-xl px-4 py-3 font-heading transition active:scale-[0.99] ${
+                  canTeachTrick
+                    ? 'bg-[#ffd93d] text-[#1a1828] hover:scale-[1.01]'
+                    : 'cursor-not-allowed bg-[#ffd93d]/40 text-[#1a1828]/70'
+                }`}
+              >
+                Teach Trick ({formatCurrency(PET_ACTIONS.trickCost)})
+              </button>
+              {!canAffordTrick && <p className="mt-2 text-xs text-[#ff6b6b]">Can't afford</p>}
+              {canAffordTrick && trickName.trim() && !trickValidation.valid && (
+                <p className="mt-2 text-xs text-[#ff6b6b]">Fix the trick name to enable the button.</p>
+              )}
+            </div>
             <div className="rounded-2xl border border-white/10 bg-[#252338] p-4">
               <p className="text-xs uppercase tracking-wide text-[#a7a9be]">Known Tricks</p>
               <div className="mt-3 flex flex-wrap gap-2">

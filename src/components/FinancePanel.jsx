@@ -25,6 +25,8 @@ export default function FinancePanel({
   const [goalAmount, setGoalAmount] = useState('');
   const [goalName, setGoalName] = useState('');
   const [error, setError] = useState(null);
+  const parsedGoalAmount = Number(goalAmount);
+  const liveGoalValidation = goalAmount === '' ? null : validateSavingsGoal(parsedGoalAmount, financeState.budget);
 
   const budgetPercent = financeState.budget
     ? Math.min(100, Math.round((financeState.wallet / financeState.budget) * 100))
@@ -94,12 +96,24 @@ export default function FinancePanel({
             />
             <input
               value={goalAmount}
-              onChange={(event) => setGoalAmount(event.target.value)}
+              onChange={(event) => {
+                setGoalAmount(event.target.value);
+                if (error) setError(null);
+              }}
               className="rounded-xl border border-white/10 bg-[#1a1828] px-3 py-2 text-sm text-white outline-none focus:border-[#4d96ff]"
               placeholder="Goal amount"
               type="number"
               min={1}
+              max={financeState.budget}
+              step={1}
             />
+            <p className={`text-xs ${liveGoalValidation && !liveGoalValidation.valid ? 'text-[#ff6b6b]' : 'text-[#a7a9be]'}`}>
+              {goalAmount === ''
+                ? `Enter a whole-dollar goal from $1 to ${financeState.budget}. Semantic validation prevents goals above the starting budget.`
+                : liveGoalValidation?.valid
+                  ? 'Goal amount looks valid.'
+                  : liveGoalValidation?.error}
+            </p>
             {error && <p className="text-xs text-[#ff6b6b]">{error}</p>}
             <button
               type="button"
@@ -161,14 +175,14 @@ export default function FinancePanel({
           onClick={onNavigateMinigame}
           className="rounded-2xl bg-[#4d96ff] px-4 py-3 font-heading text-white transition hover:scale-[1.01] active:scale-[0.99]"
         >
-          Earn Coins 🎮
+          Earn Coins (Minigames)
         </button>
         <button
           type="button"
           onClick={onNavigateReport}
           className="rounded-2xl bg-[#ffd93d] px-4 py-3 font-heading text-[#1a1828] transition hover:scale-[1.01] active:scale-[0.99]"
         >
-          End Session & Report 📊
+          End Session and Report
         </button>
       </div>
     </div>
