@@ -72,7 +72,7 @@ const safeDelta = (current, delta) => {
   return { valid: true, error: null, delta: adjustedDelta };
 };
 
-export default function usePet(initialConfig, wallet) {
+export default function usePet(initialConfig, wallet, gameOverRef) {
   const initialRef = useRef(buildInitialState(initialConfig));
   const [petState, setPetState] = useState(() => buildInitialState(initialConfig));
 
@@ -83,9 +83,11 @@ export default function usePet(initialConfig, wallet) {
     setPetState(next);
   }, [initialConfig]);
 
-  // Stat decay tick — hunger drops fastest, hygiene slowest
+  // Stat decay tick — hunger drops fastest, hygiene slowest.
+  // Bails out immediately when the game is over so the report score doesn't drift.
   useEffect(() => {
     const interval = setInterval(() => {
+      if (gameOverRef?.current) return;
       setPetState((prev) => {
         const hungerDelta    = safeDelta(prev.hunger,    -5);
         const happinessDelta = safeDelta(prev.happiness, -3);
@@ -123,9 +125,10 @@ export default function usePet(initialConfig, wallet) {
     return () => clearInterval(interval);
   }, []);
 
-  // Age tick — drives evolution stage
+  // Age tick — drives evolution stage. Also stopped at game over.
   useEffect(() => {
     const interval = setInterval(() => {
+      if (gameOverRef?.current) return;
       setPetState((prev) => {
         const nextAge = prev.age + 1;
         return { ...prev, age: nextAge, stage: getEvolutionStage(nextAge) };

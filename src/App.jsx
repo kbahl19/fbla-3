@@ -50,7 +50,7 @@ export default function App() {
 
   const { financeState, spend, earn, chargeBill, recordWeekEnd, resetFinance } = useFinance(STARTING_BUDGET);
   const { petState, feed, play, rest, clean, healthCheck, learnTrick, recordMinigame, recordDaySnapshot, resetPet } =
-    usePet(config, financeState.wallet);
+    usePet(config, financeState.wallet, gameEndedRef);
 
   // Keep refs fresh for use inside intervals
   useEffect(() => { petStateRef.current = petState; }, [petState]);
