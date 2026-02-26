@@ -1,8 +1,3 @@
-/**
- * Budget Blitz minigame — answer pet budget math questions quickly.
- * 10 questions, 8 seconds each.
- * Props: onFinish(amount, source), onBack()
- */
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { formatCurrency } from '../../utils/helpers';
 

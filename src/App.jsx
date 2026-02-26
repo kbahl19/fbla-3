@@ -262,7 +262,7 @@ export default function App() {
             PetPal
           </h1>
           <p className="text-[#a7a9be] text-lg max-w-sm">
-            Raise your pet, manage your budget, and survive 12 weeks.
+            Raise your pet, manage your budget, and survive 4 weeks.
           </p>
           <div className="mt-2 rounded-xl border border-white/10 bg-[#1a1828] px-5 py-2 text-sm">
             <span className="text-[#a7a9be]">Starting Balance: </span>

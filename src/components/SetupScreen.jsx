@@ -1,7 +1,3 @@
-/**
- * Character creator screen — options left, pet preview right.
- * Props: onStart({ name, type, ownerName, customization })
- */
 import { useMemo, useState } from 'react';
 import { PETS } from '../data/pets';
 import { ANIMAL_COLORS, ACCESSORIES, DEFAULT_CUSTOMIZATION, getCustomizationMeta } from '../data/customization';

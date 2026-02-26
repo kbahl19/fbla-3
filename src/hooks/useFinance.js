@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { validateBudget, validateItemCost, validateStatChange } from '../utils/validators';
+import { validateBudget, validateItemCost } from '../utils/validators';
 
 const createExpense = (category, item, cost) => ({
   id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -9,11 +9,6 @@ const createExpense = (category, item, cost) => ({
   timestamp: new Date().toISOString()
 });
 
-/**
- * Manages wallet balance, spending, savings goals, and expense tracking.
- * @param {number} initialBudget
- * @returns {{ financeState: object, spend: Function, earn: Function, setSavingsGoal: Function, getExpenseReport: Function, resetFinance: Function }}
- */
 export default function useFinance(initialBudget) {
   const initialRef = useRef({
     wallet: initialBudget || 0,
@@ -44,14 +39,7 @@ export default function useFinance(initialBudget) {
     setFinanceState(next);
   }, [initialBudget]);
 
-  /**
-   * Deducts spending from the wallet and records an expense.
-   * @param {number} amount
-   * @param {string} category
-   * @param {string} item
-   * @param {boolean} isPreventive - true = preventive care, false = emergency/reactive
-   * @returns {{ valid: boolean, error: string|null }}
-   */
+  // isPreventive: true = routine care (food, toys, cleaning), false = emergency/reactive
   const spend = (amount, category, item, isPreventive = true) => {
     const validation = validateItemCost(amount, financeState.wallet);
     if (!validation.valid) return validation;
@@ -69,15 +57,7 @@ export default function useFinance(initialBudget) {
     return { valid: true, error: null };
   };
 
-  /**
-   * Adds earnings to the wallet and records income.
-   * @param {number} amount
-   * @param {string} source
-   * @returns {void}
-   */
   const earn = (amount, source) => {
-    const validation = validateStatChange(0, 0);
-    if (!validation.valid) return;
     setFinanceState((prev) => ({
       ...prev,
       wallet: prev.wallet + amount,
@@ -85,12 +65,7 @@ export default function useFinance(initialBudget) {
     }));
   };
 
-  /**
-   * Auto-charges a recurring bill regardless of wallet balance (allows debt).
-   * @param {number} amount
-   * @param {string} item
-   * @returns {void}
-   */
+  // Bills always charge even if wallet goes negative (models real debt)
   const chargeBill = (amount, item) => {
     setFinanceState((prev) => ({
       ...prev,
@@ -100,10 +75,7 @@ export default function useFinance(initialBudget) {
     }));
   };
 
-  /**
-   * Closes out the current week: pushes this week's spending into weeklySpending
-   * and resets the running currentWeekSpending counter.
-   */
+  // Snapshot the week's spending total and reset the running counter
   const recordWeekEnd = () => {
     setFinanceState((prev) => ({
       ...prev,
@@ -112,10 +84,6 @@ export default function useFinance(initialBudget) {
     }));
   };
 
-  /**
-   * Groups expenses by category with subtotals.
-   * @returns {{ category: string, items: object[], subtotal: number }[]}
-   */
   const getExpenseReport = () => {
     const grouped = financeState.expenses.reduce((acc, expense) => {
       if (!acc[expense.category]) {
@@ -125,15 +93,9 @@ export default function useFinance(initialBudget) {
       acc[expense.category].subtotal += expense.cost;
       return acc;
     }, {});
-
     return Object.values(grouped);
   };
 
-  /**
-   * Resets finance state with a new budget.
-   * @param {number} newBudget
-   * @returns {void}
-   */
   const resetFinance = (newBudget) => {
     const nextBudget = typeof newBudget === 'number' ? newBudget : initialRef.current.budget;
     const validation = validateBudget(nextBudget);
@@ -154,13 +116,5 @@ export default function useFinance(initialBudget) {
 
   const financeMemo = useMemo(() => financeState, [financeState]);
 
-  return {
-    financeState: financeMemo,
-    spend,
-    earn,
-    chargeBill,
-    recordWeekEnd,
-    getExpenseReport,
-    resetFinance
-  };
+  return { financeState: financeMemo, spend, earn, chargeBill, recordWeekEnd, getExpenseReport, resetFinance };
 }

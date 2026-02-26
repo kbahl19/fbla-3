@@ -38,7 +38,7 @@ const createActionLogEntry = (action, cost, note) => ({
 const buildInitialState = (config) => {
   const age = 0;
   const stage = getEvolutionStage(age);
-  const base = {
+  return {
     name: config?.name || 'Pet',
     type: config?.type || 'dog',
     ownerName: config?.ownerName || '',
@@ -57,24 +57,16 @@ const buildInitialState = (config) => {
     actionLog: [],
     dailySnapshots: []
   };
-  return base;
 };
 
+// Returns the clamped delta and whether it's valid to apply
 const safeDelta = (current, delta) => {
   const adjustedDelta = clampStat(current + delta) - current;
   const validation = validateStatChange(current, adjustedDelta);
-  if (!validation.valid) {
-    return { valid: false, error: validation.error, delta: 0 };
-  }
+  if (!validation.valid) return { valid: false, error: validation.error, delta: 0 };
   return { valid: true, error: null, delta: adjustedDelta };
 };
 
-/**
- * Manages pet state, decay, evolution, and player actions.
- * @param {{ name: string, type: string, ownerName: string, customization?: object } | null} initialConfig
- * @param {number} wallet
- * @returns {{ petState: object, feed: Function, play: Function, rest: Function, clean: Function, healthCheck: Function, learnTrick: Function, recordMinigame: Function, resetPet: Function }}
- */
 export default function usePet(initialConfig, wallet) {
   const initialRef = useRef(buildInitialState(initialConfig));
   const [petState, setPetState] = useState(() => buildInitialState(initialConfig));
@@ -86,13 +78,14 @@ export default function usePet(initialConfig, wallet) {
     setPetState(next);
   }, [initialConfig]);
 
+  // Stat decay tick — hunger drops fastest, hygiene slowest
   useEffect(() => {
     const interval = setInterval(() => {
       setPetState((prev) => {
-        const hungerDelta = safeDelta(prev.hunger, -5);
+        const hungerDelta    = safeDelta(prev.hunger,    -5);
         const happinessDelta = safeDelta(prev.happiness, -3);
-        const energyDelta = safeDelta(prev.energy, -2);
-        const hygieneDelta = safeDelta(prev.hygiene, -2);
+        const energyDelta    = safeDelta(prev.energy,    -2);
+        const hygieneDelta   = safeDelta(prev.hygiene,   -2);
 
         if (!hungerDelta.valid || !happinessDelta.valid || !energyDelta.valid || !hygieneDelta.valid) {
           return prev;
@@ -106,11 +99,11 @@ export default function usePet(initialConfig, wallet) {
 
         const next = {
           ...prev,
-          hunger: prev.hunger + hungerDelta.delta,
+          hunger:    prev.hunger    + hungerDelta.delta,
           happiness: prev.happiness + happinessDelta.delta,
-          energy: prev.energy + energyDelta.delta,
-          hygiene: prev.hygiene + hygieneDelta.delta,
-          health: healthPenalty > 0 && healthDelta.valid ? prev.health + healthDelta.delta : prev.health
+          energy:    prev.energy    + energyDelta.delta,
+          hygiene:   prev.hygiene   + hygieneDelta.delta,
+          health:    healthPenalty > 0 && healthDelta.valid ? prev.health + healthDelta.delta : prev.health
         };
 
         if (next.health < STAT_THRESHOLDS.criticalHealth && !next.healthBottomedOut) {
@@ -123,20 +116,18 @@ export default function usePet(initialConfig, wallet) {
     return () => clearInterval(interval);
   }, []);
 
+  // Age tick — drives evolution stage
   useEffect(() => {
     const interval = setInterval(() => {
       setPetState((prev) => {
         const nextAge = prev.age + 1;
-        return {
-          ...prev,
-          age: nextAge,
-          stage: getEvolutionStage(nextAge)
-        };
+        return { ...prev, age: nextAge, stage: getEvolutionStage(nextAge) };
       });
     }, AGE_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
+  // Re-derive mood whenever any stat changes
   useEffect(() => {
     setPetState((prev) => {
       const nextMood = deriveMood(prev);
@@ -152,18 +143,14 @@ export default function usePet(initialConfig, wallet) {
     }));
   };
 
-  /**
-   * Feeds the pet with a food item.
-   * @param {{ id: string, name: string, cost: number, hungerRestore: number, happinessBonus: number }} foodItem
-   * @returns {{ valid: boolean, error: string|null, details?: object }}
-   */
   const feed = (foodItem) => {
     const affordability = validateItemCost(foodItem.cost, wallet);
     if (!affordability.valid) return affordability;
 
+    // mystery_snack has a random outcome
     const hungerBoost =
       foodItem.id === 'mystery_snack' ? (Math.random() < 0.5 ? 5 : 25) : foodItem.hungerRestore;
-    const hungerDelta = safeDelta(petState.hunger, hungerBoost);
+    const hungerDelta    = safeDelta(petState.hunger,    hungerBoost);
     const happinessDelta = safeDelta(petState.happiness, foodItem.happinessBonus || 0);
 
     if (!hungerDelta.valid || !happinessDelta.valid) {
@@ -173,7 +160,7 @@ export default function usePet(initialConfig, wallet) {
     setPetState((prev) => {
       const next = {
         ...prev,
-        hunger: prev.hunger + hungerDelta.delta,
+        hunger:    prev.hunger    + hungerDelta.delta,
         happiness: prev.happiness + happinessDelta.delta
       };
       if (next.health < STAT_THRESHOLDS.criticalHealth && !next.healthBottomedOut) {
@@ -183,29 +170,15 @@ export default function usePet(initialConfig, wallet) {
     });
 
     logAction('feed', foodItem.cost, `Fed ${petState.name} a ${foodItem.name}.`);
-    return {
-      valid: true,
-      error: null,
-      details: {
-        item: foodItem.name,
-        cost: foodItem.cost,
-        hungerDelta: hungerDelta.delta,
-        happinessDelta: happinessDelta.delta
-      }
-    };
+    return { valid: true, error: null, details: { item: foodItem.name, cost: foodItem.cost, hungerDelta: hungerDelta.delta, happinessDelta: happinessDelta.delta } };
   };
 
-  /**
-   * Plays with the pet using a toy item.
-   * @param {{ name: string, cost: number, happinessRestore: number, energyCost: number }} toyItem
-   * @returns {{ valid: boolean, error: string|null, details?: object }}
-   */
   const play = (toyItem) => {
     const affordability = validateItemCost(toyItem.cost, wallet);
     if (!affordability.valid) return affordability;
 
     const happinessDelta = safeDelta(petState.happiness, toyItem.happinessRestore);
-    const energyDelta = safeDelta(petState.energy, -toyItem.energyCost);
+    const energyDelta    = safeDelta(petState.energy,    -toyItem.energyCost);
 
     if (!happinessDelta.valid || !energyDelta.valid) {
       return { valid: false, error: 'That would push a stat too far.' };
@@ -215,7 +188,7 @@ export default function usePet(initialConfig, wallet) {
       const next = {
         ...prev,
         happiness: prev.happiness + happinessDelta.delta,
-        energy: prev.energy + energyDelta.delta
+        energy:    prev.energy    + energyDelta.delta
       };
       if (next.health < STAT_THRESHOLDS.criticalHealth && !next.healthBottomedOut) {
         next.healthBottomedOut = true;
@@ -224,86 +197,43 @@ export default function usePet(initialConfig, wallet) {
     });
 
     logAction('play', toyItem.cost, `Played with ${petState.name} using ${toyItem.name}.`);
-    return {
-      valid: true,
-      error: null,
-      details: {
-        item: toyItem.name,
-        cost: toyItem.cost,
-        happinessDelta: happinessDelta.delta,
-        energyDelta: energyDelta.delta
-      }
-    };
+    return { valid: true, error: null, details: { item: toyItem.name, cost: toyItem.cost, happinessDelta: happinessDelta.delta, energyDelta: energyDelta.delta } };
   };
 
-  /**
-   * Lets the pet rest to recover energy.
-   * @returns {{ valid: boolean, error: string|null, details?: object }}
-   */
   const rest = () => {
     const energyDelta = safeDelta(petState.energy, PET_ACTIONS.restEnergyBoost);
-    if (!energyDelta.valid) {
-      return { valid: false, error: 'Energy is already maxed out.' };
-    }
+    if (!energyDelta.valid) return { valid: false, error: 'Energy is already maxed out.' };
 
-    setPetState((prev) => ({
-      ...prev,
-      energy: prev.energy + energyDelta.delta
-    }));
-
+    setPetState((prev) => ({ ...prev, energy: prev.energy + energyDelta.delta }));
     logAction('rest', 0, `${petState.name} took a power nap.`);
-    return {
-      valid: true,
-      error: null,
-      details: { energyDelta: energyDelta.delta, cost: 0 }
-    };
+    return { valid: true, error: null, details: { energyDelta: energyDelta.delta, cost: 0 } };
   };
 
-  /**
-   * Cleans the pet to restore hygiene.
-   * @returns {{ valid: boolean, error: string|null, details?: object }}
-   */
   const clean = () => {
     const affordability = validateItemCost(PET_ACTIONS.cleanCost, wallet);
     if (!affordability.valid) return affordability;
 
     const hygieneDelta = safeDelta(petState.hygiene, PET_ACTIONS.cleanHygieneBoost);
-    if (!hygieneDelta.valid) {
-      return { valid: false, error: 'Hygiene is already at the maximum.' };
-    }
+    if (!hygieneDelta.valid) return { valid: false, error: 'Hygiene is already at the maximum.' };
 
-    setPetState((prev) => ({
-      ...prev,
-      hygiene: prev.hygiene + hygieneDelta.delta
-    }));
-
+    setPetState((prev) => ({ ...prev, hygiene: prev.hygiene + hygieneDelta.delta }));
     logAction('clean', PET_ACTIONS.cleanCost, `${petState.name} got a fresh clean.`);
-    return {
-      valid: true,
-      error: null,
-      details: { hygieneDelta: hygieneDelta.delta, cost: PET_ACTIONS.cleanCost }
-    };
+    return { valid: true, error: null, details: { hygieneDelta: hygieneDelta.delta, cost: PET_ACTIONS.cleanCost } };
   };
 
-  /**
-   * Visits the vet to restore health.
-   * @param {{ id: string, name: string, cost: number, healthRestore: number }} vetOption
-   * @returns {{ valid: boolean, error: string|null, details?: object }}
-   */
   const healthCheck = (vetOption) => {
     const affordability = validateItemCost(vetOption.cost, wallet);
     if (!affordability.valid) return affordability;
 
     const healthDelta = safeDelta(petState.health, vetOption.healthRestore);
-    if (!healthDelta.valid) {
-      return { valid: false, error: 'Health is already at the maximum.' };
-    }
+    if (!healthDelta.valid) return { valid: false, error: 'Health is already at the maximum.' };
 
+    // full_treatment gives a small bonus to all other stats
     const bonus = vetOption.id === 'full_treatment' ? PET_ACTIONS.fullTreatmentBonus : 0;
-    const hungerDelta = safeDelta(petState.hunger, bonus);
+    const hungerDelta    = safeDelta(petState.hunger,    bonus);
     const happinessDelta = safeDelta(petState.happiness, bonus);
-    const energyDelta = safeDelta(petState.energy, bonus);
-    const hygieneDelta = safeDelta(petState.hygiene, bonus);
+    const energyDelta    = safeDelta(petState.energy,    bonus);
+    const hygieneDelta   = safeDelta(petState.hygiene,   bonus);
 
     if (!hungerDelta.valid || !happinessDelta.valid || !energyDelta.valid || !hygieneDelta.valid) {
       return { valid: false, error: 'Those boosts would overfill a stat.' };
@@ -312,11 +242,11 @@ export default function usePet(initialConfig, wallet) {
     setPetState((prev) => {
       const next = {
         ...prev,
-        health: prev.health + healthDelta.delta,
-        hunger: prev.hunger + hungerDelta.delta,
+        health:    prev.health    + healthDelta.delta,
+        hunger:    prev.hunger    + hungerDelta.delta,
         happiness: prev.happiness + happinessDelta.delta,
-        energy: prev.energy + energyDelta.delta,
-        hygiene: prev.hygiene + hygieneDelta.delta
+        energy:    prev.energy    + energyDelta.delta,
+        hygiene:   prev.hygiene   + hygieneDelta.delta
       };
       if (next.health < STAT_THRESHOLDS.criticalHealth && !next.healthBottomedOut) {
         next.healthBottomedOut = true;
@@ -325,23 +255,9 @@ export default function usePet(initialConfig, wallet) {
     });
 
     logAction('vet', vetOption.cost, `${petState.name} received ${vetOption.name}.`);
-    return {
-      valid: true,
-      error: null,
-      details: {
-        item: vetOption.name,
-        cost: vetOption.cost,
-        healthDelta: healthDelta.delta,
-        bonusDelta: bonus
-      }
-    };
+    return { valid: true, error: null, details: { item: vetOption.name, cost: vetOption.cost, healthDelta: healthDelta.delta, bonusDelta: bonus } };
   };
 
-  /**
-   * Teaches the pet a new trick.
-   * @param {string} trickName
-   * @returns {{ valid: boolean, error: string|null, details?: object }}
-   */
   const learnTrick = (trickName) => {
     const affordability = validateItemCost(PET_ACTIONS.trickCost, wallet);
     if (!affordability.valid) return affordability;
@@ -350,23 +266,12 @@ export default function usePet(initialConfig, wallet) {
     if (!trickValidation.valid) return trickValidation;
     const trimmed = String(trickName || '').trim();
 
-    setPetState((prev) => ({
-      ...prev,
-      tricks: [...prev.tricks, trimmed]
-    }));
-
+    setPetState((prev) => ({ ...prev, tricks: [...prev.tricks, trimmed] }));
     logAction('trick', PET_ACTIONS.trickCost, `${petState.name} learned ${trimmed}.`);
-    return {
-      valid: true,
-      error: null,
-      details: { trickName: trimmed, cost: PET_ACTIONS.trickCost }
-    };
+    return { valid: true, error: null, details: { trickName: trimmed, cost: PET_ACTIONS.trickCost } };
   };
 
-  /**
-   * Records a weekly snapshot of the three scored stats.
-   * Call this at the end of each week tick before advancing the week counter.
-   */
+  // Called at the end of each week tick before advancing the week counter
   const recordDaySnapshot = () => {
     setPetState((prev) => ({
       ...prev,
@@ -377,41 +282,15 @@ export default function usePet(initialConfig, wallet) {
     }));
   };
 
-  /**
-   * Records a minigame play.
-   * @returns {void}
-   */
   const recordMinigame = () => {
-    const validation = validateStatChange(0, 0);
-    if (!validation.valid) return;
-    setPetState((prev) => ({
-      ...prev,
-      minigamesPlayed: prev.minigamesPlayed + 1
-    }));
+    setPetState((prev) => ({ ...prev, minigamesPlayed: prev.minigamesPlayed + 1 }));
   };
 
-  /**
-   * Resets the pet state back to the initial values.
-   * @returns {void}
-   */
   const resetPet = () => {
-    const validation = validateStatChange(0, 0);
-    if (!validation.valid) return;
     setPetState({ ...initialRef.current, tricks: [], actionLog: [], dailySnapshots: [] });
   };
 
   const petStateMemo = useMemo(() => petState, [petState]);
 
-  return {
-    petState: petStateMemo,
-    feed,
-    play,
-    rest,
-    clean,
-    healthCheck,
-    learnTrick,
-    recordMinigame,
-    recordDaySnapshot,
-    resetPet
-  };
+  return { petState: petStateMemo, feed, play, rest, clean, healthCheck, learnTrick, recordMinigame, recordDaySnapshot, resetPet };
 }

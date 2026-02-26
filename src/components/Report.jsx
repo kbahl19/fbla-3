@@ -1,7 +1,3 @@
-/**
- * Final 12-week session report with score, care grade, and expense breakdown.
- * Props: petState, financeState, weeksPlayed, onSaveLeaderboard, onPlayAgain, onLeaderboard
- */
 import { useMemo, useState } from 'react';
 import { formatCurrency } from '../utils/helpers';
 import { ScoringEngine } from '../utils/scoringEngine';
@@ -107,7 +103,7 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
       <div className="mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-[#1a1828]/90 p-8 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="font-heading text-3xl text-[#ffd93d]">12-Week Final Report</h2>
+            <h2 className="font-heading text-3xl text-[#ffd93d]">Final Report</h2>
             <p className="text-sm text-[#a7a9be]">
               {petState.ownerName} and {petState.name} | {weeksPlayed} weeks played
             </p>
