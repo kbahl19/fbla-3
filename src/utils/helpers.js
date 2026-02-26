@@ -1,4 +1,6 @@
-// Weighted formula: hunger and happiness matter most, hygiene least
+// Weighted formula: hunger and happiness matter most, hygiene least.
+// The health and energy checks run first and override the weighted score —
+// a sick or exhausted pet has a fixed mood regardless of everything else.
 export function deriveMood(petState) {
   const weighted =
     petState.hunger * 0.3 +
@@ -7,14 +9,16 @@ export function deriveMood(petState) {
     petState.energy * 0.1 +
     petState.hygiene * 0.05;
 
-  if (petState.health < 30) return 'sick';
-  if (petState.energy < 25) return 'tired';
-  if (petState.energy > 85) return 'energetic';
+  if (petState.health < 30) return 'sick';      // health crisis overrides everything
+  if (petState.energy < 25) return 'tired';     // too exhausted to show other emotions
+  if (petState.energy > 85) return 'energetic'; // high energy overrides the weighted score too
   if (weighted > 75) return 'happy';
   if (weighted < 40) return 'sad';
   return 'content';
 }
 
+// Age is incremented once per minute (AGE_INTERVAL_MS = 60000 in usePet).
+// baby: 0–4 min, teen: 5–9 min, adult: 10+ min.
 export function getEvolutionStage(age) {
   if (age < 5) return 'baby';
   if (age < 10) return 'teen';
@@ -29,6 +33,9 @@ export function formatCurrency(amount) {
   }).format(amount || 0);
 }
 
+// Simple letter grade shown on the report — plain average of all 5 stats.
+// Not the same as the scoring engine's Wellbeing component, which only uses
+// happiness, health, and energy.
 export function calculateCareGrade(petState) {
   const average =
     (petState.hunger + petState.happiness + petState.health + petState.energy + petState.hygiene) / 5;
@@ -39,6 +46,8 @@ export function calculateCareGrade(petState) {
   return 'F';
 }
 
+// Three-tier color for stat bars: green → yellow → red.
+// The red threshold (below 30) aligns with the fast-decay zone in usePet.
 export function getStatColor(value) {
   if (value > 60) return 'bg-[#6bcb77]';
   if (value >= 30) return 'bg-[#ffd93d]';

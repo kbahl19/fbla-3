@@ -4,6 +4,8 @@ import { formatCurrency } from '../../utils/helpers';
 const TIME_PER_Q = 8;
 const TOTAL_QUESTIONS = 10;
 
+// Builds a pool of question generator functions and draws 10 at random.
+// Each generator returns { question, answer, options } with 4 shuffled choices.
 function generateQuestions() {
   const pool = [
     () => {
@@ -130,6 +132,7 @@ function generateQuestions() {
   return selected.map((fn) => fn());
 }
 
+// Fisher-Yates shuffle — each permutation is equally likely.
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -139,6 +142,7 @@ function shuffle(arr) {
   return a;
 }
 
+// $10 per correct answer, no cap — a perfect 10/10 run earns $100.
 const getEarnings = (correct) => correct * 10;
 
 export default function BudgetBlitz({ onFinish, onBack }) {
@@ -151,6 +155,8 @@ export default function BudgetBlitz({ onFinish, onBack }) {
   const [started, setStarted] = useState(false);
   const timerRef = useRef(null);
 
+  // Called after every answer (whether the user tapped one or the timer ran out).
+  // The 600 ms delay lets the correct/wrong highlight show before advancing.
   const advance = (wasCorrect) => {
     clearInterval(timerRef.current);
     const nextCorrect = wasCorrect ? correct + 1 : correct;
@@ -168,6 +174,8 @@ export default function BudgetBlitz({ onFinish, onBack }) {
     }
   };
 
+  // Timer resets on every new question (current changes) and stops as soon as
+  // the player picks an answer (selected !== null) to prevent double-advancing.
   useEffect(() => {
     if (!started || gameOver || selected !== null) return;
     setTimeLeft(TIME_PER_Q);
@@ -175,7 +183,7 @@ export default function BudgetBlitz({ onFinish, onBack }) {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timerRef.current);
-          advance(false);
+          advance(false); // time's up — count as wrong
           return 0;
         }
         return t - 1;

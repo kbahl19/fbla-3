@@ -3,6 +3,9 @@ import { deriveMood, getEvolutionStage, clampStat } from '../utils/helpers';
 import { validateItemCost, validateStatChange, validateTrickName } from '../utils/validators';
 import { normalizeCustomization } from '../data/customization';
 
+// Starting values — all stats are capped at 100. These are intentionally
+// below max so there's room to improve them, and low enough that neglect
+// becomes visible within the first week.
 const BASE_STATS = {
   hunger: 80,
   happiness: 70,
@@ -11,21 +14,23 @@ const BASE_STATS = {
   hygiene: 70
 };
 
+// Action constants kept here so action handlers don't hardcode magic numbers.
+// Rest is the only free action — no cost field needed.
 export const PET_ACTIONS = {
   restEnergyBoost: 20,
   cleanCost: 8,
   cleanHygieneBoost: 30,
   trickCost: 20,
-  fullTreatmentBonus: 10
+  fullTreatmentBonus: 10  // bonus applied to all non-health stats after a Full Treatment
 };
 
 export const STAT_THRESHOLDS = {
-  criticalHealth: 20,
-  warning: 25
+  criticalHealth: 20,  // once health falls below this, healthBottomedOut is flagged permanently
+  warning: 25          // stat bars turn red below this value
 };
 
-const DECAY_INTERVAL_MS = 3000;
-const AGE_INTERVAL_MS = 60000;
+const DECAY_INTERVAL_MS = 3000;   // one stat tick = 3 real seconds
+const AGE_INTERVAL_MS = 60000;    // one age unit = 1 real minute; drives evolution stage
 
 const createActionLogEntry = (action, cost, note) => ({
   id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -91,7 +96,9 @@ export default function usePet(initialConfig, wallet) {
           return prev;
         }
 
-        // Health erodes when hunger or hygiene are critically low
+        // Health erodes when hunger or hygiene are critically low.
+        // Two tiers per stat: a slow drain when below 50, a fast drain when below 30.
+        // Both penalties stack, so a pet that's both starving and filthy loses health fast.
         const healthPenalty =
           (prev.hunger < 30 ? 5 : prev.hunger < 50 ? 2 : 0) +
           (prev.hygiene < 30 ? 3 : prev.hygiene < 50 ? 1 : 0);
@@ -264,6 +271,8 @@ export default function usePet(initialConfig, wallet) {
 
     const trickValidation = validateTrickName(trickName, petState.tricks);
     if (!trickValidation.valid) return trickValidation;
+    // Re-trim here because validateTrickName trims for comparison but doesn't
+    // return the cleaned value — we want the stored name to be whitespace-free.
     const trimmed = String(trickName || '').trim();
 
     setPetState((prev) => ({ ...prev, tricks: [...prev.tricks, trimmed] }));
@@ -271,7 +280,10 @@ export default function usePet(initialConfig, wallet) {
     return { valid: true, error: null, details: { trickName: trimmed, cost: PET_ACTIONS.trickCost } };
   };
 
-  // Called at the end of each week tick before advancing the week counter
+  // Called at the end of each week tick before advancing the week counter.
+  // Only happiness, health, and energy are snapshotted because those are the
+  // three stats the scoring engine uses for Wellbeing. Hunger and hygiene are
+  // excluded — they're inputs that drive health decay, not scored directly.
   const recordDaySnapshot = () => {
     setPetState((prev) => ({
       ...prev,

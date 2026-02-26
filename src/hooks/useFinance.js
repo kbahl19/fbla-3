@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { validateBudget, validateItemCost } from '../utils/validators';
 
+// Each expense gets a unique ID from timestamp + random hex suffix to avoid
+// collisions if two expenses are created in the same millisecond.
 const createExpense = (category, item, cost) => ({
   id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
   category,
@@ -84,6 +86,8 @@ export default function useFinance(initialBudget) {
     }));
   };
 
+  // Groups the flat expense list by category and sums each group's total.
+  // Returns an array of { category, items, subtotal } objects for the report UI.
   const getExpenseReport = () => {
     const grouped = financeState.expenses.reduce((acc, expense) => {
       if (!acc[expense.category]) {
