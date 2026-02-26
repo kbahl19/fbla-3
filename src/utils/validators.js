@@ -106,6 +106,28 @@ export function validateOwnerName(name) {
   return { valid: true, error: null };
 }
 
+export function validateSelection(value, allowedValues, label = 'Selection') {
+  if (!value) {
+    return { valid: false, error: `${label} is required.` };
+  }
+  if (!Array.isArray(allowedValues) || !allowedValues.includes(value)) {
+    return { valid: false, error: `Choose a valid ${label.toLowerCase()}.` };
+  }
+  return { valid: true, error: null };
+}
+
+export function validateDistinctNames(ownerName, petName) {
+  const owner = String(ownerName || '').trim().toLowerCase();
+  const pet = String(petName || '').trim().toLowerCase();
+  if (!owner || !pet) {
+    return { valid: true, error: null };
+  }
+  if (owner === pet) {
+    return { valid: false, error: 'Owner name and pet name should be different for clarity.' };
+  }
+  return { valid: true, error: null };
+}
+
 export function validateTrickName(trickName, existingTricks = []) {
   const trimmed = String(trickName || '').trim();
   if (!trimmed) {

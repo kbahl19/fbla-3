@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { deriveMood, getEvolutionStage, clampStat } from '../utils/helpers';
 import { validateItemCost, validateStatChange, validateTrickName } from '../utils/validators';
+import { normalizeCustomization } from '../data/customization';
 
 const BASE_STATS = {
   hunger: 80,
@@ -41,6 +42,7 @@ const buildInitialState = (config) => {
     name: config?.name || 'Pet',
     type: config?.type || 'dog',
     ownerName: config?.ownerName || '',
+    customization: normalizeCustomization(config?.customization),
     stage,
     hunger: BASE_STATS.hunger,
     happiness: BASE_STATS.happiness,
@@ -68,7 +70,7 @@ const safeDelta = (current, delta) => {
 
 /**
  * Manages pet state, decay, evolution, and player actions.
- * @param {{ name: string, type: string, ownerName: string } | null} initialConfig
+ * @param {{ name: string, type: string, ownerName: string, customization?: object } | null} initialConfig
  * @param {number} wallet
  * @returns {{ petState: object, feed: Function, play: Function, rest: Function, clean: Function, healthCheck: Function, learnTrick: Function, recordMinigame: Function, resetPet: Function }}
  */

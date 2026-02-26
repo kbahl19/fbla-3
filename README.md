@@ -8,6 +8,8 @@ PetPal is a React + Vite virtual pet game built for the 2025-2026 FBLA Introduct
   - Player enters `owner name`
   - Player chooses `pet name`
   - Player chooses `pet type`
+  - Player customizes `color theme`, `accessory`, and `personality`
+  - Live character creator preview updates instantly
 - Care actions:
   - `Feed`
   - `Play`
@@ -52,7 +54,7 @@ Use `docs/DEMO_SCRIPT_7_MIN.md` for the full judging demo script.
 Recommended demo flow:
 
 1. Start at setup screen and show validation messages.
-2. Customize owner name, pet name, and pet type.
+2. Customize owner name, pet name, pet type, plus style options (theme/accessory/personality) while showing the live preview.
 3. Demonstrate feed/play/rest/clean/health check actions.
 4. Show pet mood/reactions and stat changes.
 5. Show wallet changes, weekly bills/salary, and savings goal validation.
@@ -64,9 +66,11 @@ Recommended demo flow:
 - Syntactic validation examples:
   - Pet name format and max length
   - Owner name allowed characters and max length
+  - Character creator selection validation (pet type/theme/accessory/personality)
   - Trick name format and duplicate prevention
   - Savings goal must be a whole dollar value
 - Semantic validation examples:
+  - Owner and pet names must be distinct for clear reports/leaderboard entries
   - Cannot purchase items when wallet funds are insufficient
   - Savings goal cannot exceed starting budget
   - Action buttons disable when unaffordable
@@ -125,6 +129,7 @@ See the full checklist in `docs/FBLA_COMPLIANCE_CHECKLIST.md`.
 - `src/hooks/usePet.js` - pet state, mood logic, care actions
 - `src/hooks/useFinance.js` - wallet, expenses, savings goal, income/bills
 - `src/components/SetupScreen.jsx` - setup UX and validation messages
+- `src/data/customization.js` - character creator options and safe defaults/normalization
 - `src/components/ActionPanel.jsx` - care actions and trick validation UX
 - `src/components/FinancePanel.jsx` - budget, savings goal, recent expenses
 - `src/components/HelpModal.jsx` - in-app help and instructions

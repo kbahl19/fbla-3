@@ -31,17 +31,20 @@ Show:
 - Owner name field
 - Pet name field
 - Pet type choices
+- Character creator style options (color theme, accessory, personality)
+- Live preview panel (updates instantly)
 
 Actions:
 
 1. Enter an invalid name (special characters) to trigger validation.
 2. Correct it and show the "valid" helper message.
-3. Choose a pet type.
-4. Start game.
+3. Trigger the semantic validation by making owner name and pet name identical, then correct it.
+4. Choose a pet type and style options; point out the live preview changes.
+5. Start game.
 
 Say:
 
-"Validation is both syntactic and semantic. Here you can see syntactic input checks directly in the UI."
+"Validation is both syntactic and semantic. The setup screen checks name formatting, valid option selections, and a semantic rule that keeps owner and pet names distinct for clearer reports."
 
 ### 1:45-3:30 - Core Care Actions + Reactions
 

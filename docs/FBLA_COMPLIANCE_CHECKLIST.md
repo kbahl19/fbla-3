@@ -2,8 +2,9 @@
 
 ## Topic Requirement Mapping (2025-2026 Virtual Pet)
 
-- [x] Customization (name + pet type)
-  - `SetupScreen` collects owner name, pet name, and pet type.
+- [x] Customization (name + pet type + style profile)
+  - `SetupScreen` collects owner name, pet name, pet type, plus `color theme`, `accessory`, and `personality`.
+  - Live character creator preview shows the chosen type/emoji, names, and style selections before starting gameplay.
 - [x] Care actions
   - Feed, Play, Rest, Clean, Health Check (vet) available in `ActionPanel`.
 - [x] Reactions to care level
@@ -33,7 +34,8 @@
 
 ### 3) Input Validation (Syntactic + Semantic)
 
-- [x] Syntactic validation shown in setup (owner name, pet name)
+- [x] Syntactic validation shown in setup (owner name, pet name, creator selections)
+- [x] Semantic setup validation (owner/pet names must be distinct)
 - [x] Syntactic validation shown for trick names
 - [x] Syntactic validation shown for savings goal format (whole dollars)
 - [x] Semantic validation for affordability (disabled actions + messages)

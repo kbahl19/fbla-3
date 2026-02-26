@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PETS } from '../data/pets';
 import { STAT_THRESHOLDS } from '../hooks/usePet';
+import { getCustomizationMeta } from '../data/customization';
 
 const moodStyles = {
   happy: 'bg-[#ffd93d] text-[#1a1828]',
@@ -27,6 +28,10 @@ export default function PetDisplay({ petState, onAction }) {
 
   const petMeta = useMemo(() => PETS.find((pet) => pet.id === petState.type), [petState.type]);
   const emoji = petState.stage === 'baby' ? petMeta?.emoji_baby : petState.stage === 'teen' ? petMeta?.emoji_teen : petMeta?.emoji_adult;
+  const customizationMeta = useMemo(
+    () => getCustomizationMeta(petState.customization),
+    [petState.customization]
+  );
 
   const moodClass = moodStyles[petState.mood] || moodStyles.content;
   const isHealthCritical = petState.health < STAT_THRESHOLDS.criticalHealth;
@@ -39,21 +44,41 @@ export default function PetDisplay({ petState, onAction }) {
       className={`rounded-3xl border ${
         isHealthCritical ? 'border-[#ff6b6b] animate-pulse' : 'border-white/10'
       } bg-[#1a1828]/80 p-6 text-center shadow-xl`}
+      style={{
+        boxShadow: isHealthCritical ? undefined : `0 20px 40px -25px ${customizationMeta.theme.accentSoft}`
+      }}
     >
       <div
-        className={`mx-auto flex h-44 w-44 items-center justify-center rounded-full bg-[#252338] text-7xl shadow-lg ${
+        className={`mx-auto relative flex h-44 w-44 items-center justify-center rounded-full border text-7xl shadow-lg ${
           bounce ? 'animate-pet-bounce' : 'animate-pet-float'
         }`}
+        style={{
+          borderColor: `${customizationMeta.theme.accent}55`,
+          background: customizationMeta.theme.surface
+        }}
       >
         {emoji}
+        <span className="absolute right-4 top-4 text-2xl" aria-hidden="true">
+          {customizationMeta.accessory.emoji}
+        </span>
       </div>
 
       <h2 className="mt-4 font-heading text-3xl text-[#fffffe]">{petState.name}</h2>
+      {petState.ownerName && <p className="mt-1 text-sm text-[#a7a9be]">Owner: {petState.ownerName}</p>}
       <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
         <span className="rounded-full bg-[#252338] px-3 py-1 text-xs uppercase tracking-wide text-[#a7a9be]">
           {petMeta?.name || petState.type}
         </span>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${moodClass}`}>{petState.mood}</span>
+        <span
+          className="rounded-full px-3 py-1 text-xs font-semibold"
+          style={{ backgroundColor: customizationMeta.theme.accentSoft, color: customizationMeta.theme.accent }}
+        >
+          {customizationMeta.theme.label}
+        </span>
+        <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-[#d4d6eb]">
+          {customizationMeta.personality.emoji} {customizationMeta.personality.label}
+        </span>
       </div>
 
       <div className="mt-4 grid gap-1 text-sm text-[#a7a9be]">
@@ -66,6 +91,9 @@ export default function PetDisplay({ petState, onAction }) {
       </div>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <span className="rounded-full bg-[#252338] px-3 py-1 text-xs text-[#a7a9be]">
+          {customizationMeta.accessory.emoji} {customizationMeta.accessory.label}
+        </span>
         {visibleTricks.map((trick) => (
           <span key={trick} className="rounded-full bg-[#4d96ff]/20 px-3 py-1 text-xs text-[#4d96ff]">
             {trick}
