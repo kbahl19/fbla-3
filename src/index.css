@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #fffffe;
+  background-color: #0f0e17;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  background-color: #0f0e17;
+  color: #fffffe;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 217, 61, 0.12) 0 2px, transparent 2px),
+    radial-gradient(circle at 80% 30%, rgba(77, 150, 255, 0.15) 0 2px, transparent 2px),
+    radial-gradient(circle at 40% 70%, rgba(199, 125, 255, 0.12) 0 2px, transparent 2px),
+    radial-gradient(circle at 75% 80%, rgba(107, 203, 119, 0.12) 0 2px, transparent 2px),
+    radial-gradient(circle at 10% 85%, rgba(255, 107, 107, 0.12) 0 2px, transparent 2px);
+  background-size: 240px 240px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+@keyframes pet-float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes pet-bounce {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.08) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.animate-pet-float {
+  animation: pet-float 3s ease-in-out infinite;
+}
+
+.animate-pet-bounce {
+  animation: pet-bounce 0.4s ease-in-out;
+}
