@@ -34,6 +34,7 @@ export function getSalaryLabel(health) {
 
 export default function App() {
   const [view, setView] = useState(VIEWS.LANDING);
+  const [leaderboardFrom, setLeaderboardFrom] = useState(VIEWS.GAME);
   const [config, setConfig] = useState(null);
   const [week, setWeek] = useState(1);
   const [weeklyModal, setWeeklyModal] = useState(null);
@@ -302,13 +303,13 @@ export default function App() {
         weeksPlayed={Math.min(TOTAL_WEEKS, week - 1)}
         onSaveLeaderboard={handleSaveLeaderboard}
         onPlayAgain={handlePlayAgain}
-        onLeaderboard={() => setView(VIEWS.LEADERBOARD)}
+        onLeaderboard={() => { setLeaderboardFrom(VIEWS.REPORT); setView(VIEWS.LEADERBOARD); }}
       />
     );
   }
 
   if (view === VIEWS.LEADERBOARD) {
-    return <Leaderboard onBack={() => setView(VIEWS.GAME)} />;
+    return <Leaderboard onBack={() => setView(leaderboardFrom)} />;
   }
 
   // GAME view
@@ -352,7 +353,7 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={() => setView(VIEWS.LEADERBOARD)}
+              onClick={() => { setLeaderboardFrom(VIEWS.GAME); setView(VIEWS.LEADERBOARD); }}
               className="rounded-full border border-white/10 px-3 py-2 text-xs uppercase tracking-wide text-white hover:border-[#ffd93d]"
             >
               Board

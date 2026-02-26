@@ -56,4 +56,3 @@ The final report generates a 4-component score (Wellbeing 40%, Financial Respons
 - `src/components/Report.jsx` — final analytics report
 - `src/utils/validators.js` — all validation rules
 - `src/utils/scoringEngine.js` — 4-component scoring algorithm
-- `docs/` — demo script, compliance checklist, Q&A prep
