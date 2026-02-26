@@ -31,7 +31,7 @@ Show:
 - Owner name field
 - Pet name field
 - Pet type choices
-- Character creator style options (color theme, accessory, personality)
+- Character creator style options (color theme, accessory)
 - Live preview panel (updates instantly)
 
 Actions:

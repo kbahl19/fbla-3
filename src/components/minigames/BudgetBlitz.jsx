@@ -215,8 +215,8 @@ export default function BudgetBlitz({ onFinish, onBack }) {
 
         {!started && !gameOver && (
           <div className="mt-6 rounded-2xl border border-white/10 bg-[#252338] p-6 text-center">
-            <p className="text-[#a7a9be]">Answer 10 pet care budgeting questions. You have 8 seconds each. $2 per correct answer!</p>
-            <p className="mt-2 text-xs text-[#a7a9be]">Max earnings: $20</p>
+            <p className="text-[#a7a9be]">Answer 10 pet care budgeting questions. You have 8 seconds each. $10 per correct answer!</p>
+            <p className="mt-2 text-xs text-[#a7a9be]">Max earnings: $100</p>
             <button
               type="button"
               onClick={() => setStarted(true)}

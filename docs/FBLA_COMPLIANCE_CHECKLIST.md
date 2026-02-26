@@ -3,7 +3,7 @@
 ## Topic Requirement Mapping (2025-2026 Virtual Pet)
 
 - [x] Customization (name + pet type + style profile)
-  - `SetupScreen` collects owner name, pet name, pet type, plus `color theme`, `accessory`, and `personality`.
+  - `SetupScreen` collects owner name, pet name, pet type, plus `color theme` and `accessory`.
   - Live character creator preview shows the chosen type/emoji, names, and style selections before starting gameplay.
 - [x] Care actions
   - Feed, Play, Rest, Clean, Health Check (vet) available in `ActionPanel`.
