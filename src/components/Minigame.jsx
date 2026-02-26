@@ -16,7 +16,7 @@ const GAMES = [
     emoji: '🍎',
     description: 'Catch falling food items before they hit the ground. Use ← → arrow keys or A/D.',
     difficulty: 'Medium',
-    maxEarnings: 15,
+    maxEarnings: 80,
     difficultyColor: 'text-[#ffd93d]'
   },
   {
@@ -25,7 +25,7 @@ const GAMES = [
     emoji: '🃏',
     description: 'Flip cards to find matching pet care pairs. Race against the 60-second clock!',
     difficulty: 'Hard',
-    maxEarnings: 16,
+    maxEarnings: 80,
     difficultyColor: 'text-[#ff6b6b]'
   },
   {
@@ -34,7 +34,7 @@ const GAMES = [
     emoji: '🐾',
     description: 'Click the glowing paw before it disappears! Gets faster each round.',
     difficulty: 'Hard',
-    maxEarnings: 15,
+    maxEarnings: 80,
     difficultyColor: 'text-[#ff6b6b]'
   },
   {
@@ -43,7 +43,7 @@ const GAMES = [
     emoji: '🧮',
     description: 'Answer pet budgeting math questions quickly. 8 seconds per question!',
     difficulty: 'Medium',
-    maxEarnings: 20,
+    maxEarnings: 100,
     difficultyColor: 'text-[#ffd93d]'
   },
   {
@@ -52,7 +52,7 @@ const GAMES = [
     emoji: '🎯',
     description: 'Memorize and repeat the pet care routine sequence. Each round gets longer!',
     difficulty: 'Hard',
-    maxEarnings: 15,
+    maxEarnings: 80,
     difficultyColor: 'text-[#ff6b6b]'
   }
 ];

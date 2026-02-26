@@ -13,9 +13,9 @@ const BASE_STATS = {
 
 export const PET_ACTIONS = {
   restEnergyBoost: 20,
-  cleanCost: 2,
+  cleanCost: 8,
   cleanHygieneBoost: 30,
-  trickCost: 10,
+  trickCost: 20,
   fullTreatmentBonus: 10
 };
 
@@ -24,7 +24,7 @@ export const STAT_THRESHOLDS = {
   warning: 25
 };
 
-const DECAY_INTERVAL_MS = 4000;
+const DECAY_INTERVAL_MS = 3000;
 const AGE_INTERVAL_MS = 60000;
 
 const createActionLogEntry = (action, cost, note) => ({
@@ -54,7 +54,8 @@ const buildInitialState = (config) => {
     minigamesPlayed: 0,
     healthBottomedOut: false,
     tricks: [],
-    actionLog: []
+    actionLog: [],
+    dailySnapshots: []
   };
   return base;
 };
@@ -88,10 +89,10 @@ export default function usePet(initialConfig, wallet) {
   useEffect(() => {
     const interval = setInterval(() => {
       setPetState((prev) => {
-        const hungerDelta = safeDelta(prev.hunger, -3);
-        const happinessDelta = safeDelta(prev.happiness, -2);
-        const energyDelta = safeDelta(prev.energy, -1);
-        const hygieneDelta = safeDelta(prev.hygiene, -1);
+        const hungerDelta = safeDelta(prev.hunger, -5);
+        const happinessDelta = safeDelta(prev.happiness, -3);
+        const energyDelta = safeDelta(prev.energy, -2);
+        const hygieneDelta = safeDelta(prev.hygiene, -2);
 
         if (!hungerDelta.valid || !happinessDelta.valid || !energyDelta.valid || !hygieneDelta.valid) {
           return prev;
@@ -99,8 +100,8 @@ export default function usePet(initialConfig, wallet) {
 
         // Health erodes when hunger or hygiene are critically low
         const healthPenalty =
-          (prev.hunger < 30 ? 2 : prev.hunger < 50 ? 1 : 0) +
-          (prev.hygiene < 30 ? 1 : 0);
+          (prev.hunger < 30 ? 5 : prev.hunger < 50 ? 2 : 0) +
+          (prev.hygiene < 30 ? 3 : prev.hygiene < 50 ? 1 : 0);
         const healthDelta = safeDelta(prev.health, -healthPenalty);
 
         const next = {
@@ -363,6 +364,20 @@ export default function usePet(initialConfig, wallet) {
   };
 
   /**
+   * Records a weekly snapshot of the three scored stats.
+   * Call this at the end of each week tick before advancing the week counter.
+   */
+  const recordDaySnapshot = () => {
+    setPetState((prev) => ({
+      ...prev,
+      dailySnapshots: [
+        ...prev.dailySnapshots,
+        { happiness: prev.happiness, health: prev.health, energy: prev.energy }
+      ]
+    }));
+  };
+
+  /**
    * Records a minigame play.
    * @returns {void}
    */
@@ -382,7 +397,7 @@ export default function usePet(initialConfig, wallet) {
   const resetPet = () => {
     const validation = validateStatChange(0, 0);
     if (!validation.valid) return;
-    setPetState({ ...initialRef.current, tricks: [], actionLog: [] });
+    setPetState({ ...initialRef.current, tricks: [], actionLog: [], dailySnapshots: [] });
   };
 
   const petStateMemo = useMemo(() => petState, [petState]);
@@ -396,6 +411,7 @@ export default function usePet(initialConfig, wallet) {
     healthCheck,
     learnTrick,
     recordMinigame,
+    recordDaySnapshot,
     resetPet
   };
 }

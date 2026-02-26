@@ -6,21 +6,23 @@
 import { formatCurrency } from '../utils/helpers';
 
 export default function WeeklyUpdate({ data, totalWeeks, weeklyBill, onClose }) {
-  const { completedWeek, nextWeek, salary, petHealth, isGameOver } = data;
+  const { completedWeek, nextWeek, salary, petHealth, isGameOver, petDied } = data;
   const net = salary - weeklyBill;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#1a1828] p-6 shadow-2xl">
         <div className="text-center">
-          <span className="text-5xl">{isGameOver ? '🏁' : '📅'}</span>
-          <h2 className="mt-3 font-heading text-3xl text-[#ffd93d]">
-            {isGameOver ? 'Final Week Complete!' : `Week ${completedWeek} Done`}
+          <span className="text-5xl">{petDied ? '💀' : isGameOver ? '🏁' : '📅'}</span>
+          <h2 className="mt-3 font-heading text-3xl" style={{ color: petDied ? '#ff6b6b' : '#ffd93d' }}>
+            {petDied ? 'Your Pet Died!' : isGameOver ? 'Game Complete!' : `Week ${completedWeek} Done`}
           </h2>
           <p className="mt-1 text-sm text-[#a7a9be]">
-            {isGameOver
-              ? `All ${totalWeeks} weeks completed. Time to see your final score!`
-              : `Week ${nextWeek} of ${totalWeeks} begins now.`}
+            {petDied
+              ? 'A stat hit zero. The game is over — check your final score.'
+              : isGameOver
+                ? `All ${totalWeeks} weeks completed. Time to see your final score!`
+                : `Week ${nextWeek} of ${totalWeeks} begins now.`}
           </p>
         </div>
 

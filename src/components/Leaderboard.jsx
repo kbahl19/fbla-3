@@ -11,15 +11,7 @@ export default function Leaderboard({ onBack }) {
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('petpal_leaderboard') || '[]');
-    // Sort by finalScore (desc), fallback to careGrade then age
-    const gradeRank = { A: 1, B: 2, C: 3, D: 4, F: 5 };
-    const sorted = [...stored].sort((a, b) => {
-      const scoreDiff = (b.finalScore || 0) - (a.finalScore || 0);
-      if (scoreDiff !== 0) return scoreDiff;
-      const gradeDiff = (gradeRank[a.careGrade] || 99) - (gradeRank[b.careGrade] || 99);
-      if (gradeDiff !== 0) return gradeDiff;
-      return (b.weeksPlayed || b.age || 0) - (a.weeksPlayed || a.age || 0);
-    });
+    const sorted = [...stored].sort((a, b) => (b.finalScore || 0) - (a.finalScore || 0));
     setEntries(sorted);
   }, []);
 
@@ -36,7 +28,7 @@ export default function Leaderboard({ onBack }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-heading text-3xl text-[#ffd93d]">Leaderboard</h2>
-            <p className="text-sm text-[#a7a9be]">Ranked by Final Score (wallet + avg stats × 2)</p>
+            <p className="text-sm text-[#a7a9be]">Ranked by Final Score (0–100)</p>
           </div>
           <button
             type="button"
@@ -59,7 +51,7 @@ export default function Leaderboard({ onBack }) {
                   <th className="py-3 pr-4">Pet</th>
                   <th className="py-3 pr-4">Type</th>
                   <th className="py-3 pr-4">Score</th>
-                  <th className="py-3 pr-4">Grade</th>
+                  <th className="py-3 pr-4">Tier</th>
                   <th className="py-3 pr-4">Wallet</th>
                   <th className="py-3 pr-4">Weeks</th>
                   <th className="py-3">Date</th>
@@ -77,8 +69,8 @@ export default function Leaderboard({ onBack }) {
                     <td className="py-3 pr-4">{entry.ownerName}</td>
                     <td className="py-3 pr-4">{entry.petName}</td>
                     <td className="py-3 pr-4 capitalize">{entry.petType}</td>
-                    <td className="py-3 pr-4 font-heading text-[#ffd93d]">{entry.finalScore || '—'}</td>
-                    <td className="py-3 pr-4">{entry.careGrade}</td>
+                    <td className="py-3 pr-4 font-heading text-[#ffd93d]">{entry.finalScore ?? '—'}</td>
+                    <td className="py-3 pr-4 text-xs text-[#a7a9be]">{entry.classification || '—'}</td>
                     <td className="py-3 pr-4">{formatCurrency(entry.wallet ?? entry.totalSpent)}</td>
                     <td className="py-3 pr-4">{entry.weeksPlayed ?? entry.age ?? '—'}</td>
                     <td className="py-3">{entry.date}</td>

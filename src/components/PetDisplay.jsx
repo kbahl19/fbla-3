@@ -28,10 +28,7 @@ export default function PetDisplay({ petState, onAction }) {
 
   const petMeta = useMemo(() => PETS.find((pet) => pet.id === petState.type), [petState.type]);
   const emoji = petState.stage === 'baby' ? petMeta?.emoji_baby : petState.stage === 'teen' ? petMeta?.emoji_teen : petMeta?.emoji_adult;
-  const customizationMeta = useMemo(
-    () => getCustomizationMeta(petState.customization),
-    [petState.customization]
-  );
+  const customizationMeta = useMemo(() => getCustomizationMeta(petState.customization), [petState.customization]);
 
   const moodClass = moodStyles[petState.mood] || moodStyles.content;
   const isHealthCritical = petState.health < STAT_THRESHOLDS.criticalHealth;
@@ -45,7 +42,7 @@ export default function PetDisplay({ petState, onAction }) {
         isHealthCritical ? 'border-[#ff6b6b] animate-pulse' : 'border-white/10'
       } bg-[#1a1828]/80 p-6 text-center shadow-xl`}
       style={{
-        boxShadow: isHealthCritical ? undefined : `0 20px 40px -25px ${customizationMeta.theme.accentSoft}`
+        boxShadow: isHealthCritical ? undefined : `0 20px 40px -25px ${customizationMeta.color.glow}`
       }}
     >
       <div
@@ -53,8 +50,8 @@ export default function PetDisplay({ petState, onAction }) {
           bounce ? 'animate-pet-bounce' : 'animate-pet-float'
         }`}
         style={{
-          borderColor: `${customizationMeta.theme.accent}55`,
-          background: customizationMeta.theme.surface
+          borderColor: `${customizationMeta.color.hex}55`,
+          background: `radial-gradient(circle, ${customizationMeta.color.glow}, rgba(26,24,40,0.6))`
         }}
       >
         {emoji}
@@ -72,12 +69,9 @@ export default function PetDisplay({ petState, onAction }) {
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${moodClass}`}>{petState.mood}</span>
         <span
           className="rounded-full px-3 py-1 text-xs font-semibold"
-          style={{ backgroundColor: customizationMeta.theme.accentSoft, color: customizationMeta.theme.accent }}
+          style={{ backgroundColor: `${customizationMeta.color.hex}25`, color: customizationMeta.color.hex }}
         >
-          {customizationMeta.theme.label}
-        </span>
-        <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-[#d4d6eb]">
-          {customizationMeta.personality.emoji} {customizationMeta.personality.label}
+          {customizationMeta.color.label}
         </span>
       </div>
 

@@ -17,10 +17,10 @@ const FOOD_ITEMS = [
 ];
 
 const getEarnings = (score) => {
-  if (score >= 20) return 15;
-  if (score >= 12) return 10;
-  if (score >= 6) return 5;
-  if (score >= 1) return 2;
+  if (score >= 20) return 80;
+  if (score >= 12) return 55;
+  if (score >= 6) return 30;
+  if (score >= 1) return 10;
   return 0;
 };
 
@@ -40,23 +40,35 @@ export default function FoodCatcher({ onFinish, onBack }) {
   useEffect(() => { livesRef.current = lives; }, [lives]);
   useEffect(() => { playerXRef.current = playerX; }, [playerX]);
 
+  const gameAreaRef = useRef(null);
+
   const handleKey = useCallback((e) => {
     if (!started) return;
     if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
       setPlayerX((prev) => {
-        const next = Math.max(4, prev - 5);
+        const next = Math.max(4, prev - 10);
         playerXRef.current = next;
         return next;
       });
     }
     if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
       setPlayerX((prev) => {
-        const next = Math.min(96, prev + 5);
+        const next = Math.min(96, prev + 10);
         playerXRef.current = next;
         return next;
       });
     }
   }, [started]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!started || gameOver) return;
+    const rect = gameAreaRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const clamped = Math.min(96, Math.max(4, x));
+    playerXRef.current = clamped;
+    setPlayerX(clamped);
+  }, [started, gameOver]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKey);
@@ -175,7 +187,11 @@ export default function FoodCatcher({ onFinish, onBack }) {
         )}
 
         {started && !gameOver && (
-          <div className="relative mt-4 h-[400px] overflow-hidden rounded-3xl border border-white/10 bg-[#252338]">
+          <div
+          ref={gameAreaRef}
+          onMouseMove={handleMouseMove}
+          className="relative mt-4 h-[400px] overflow-hidden rounded-3xl border border-white/10 bg-[#252338] cursor-none"
+        >
             {items.map((item) => (
               <div
                 key={item.id}
@@ -238,7 +254,7 @@ export default function FoodCatcher({ onFinish, onBack }) {
             <p className="mt-2 text-[#a7a9be]">You scored <span className="text-white font-bold">{score}</span> points.</p>
             <p className="mt-2 text-lg text-[#6bcb77]">Earnings: {formatCurrency(earnings)}</p>
             <div className="mt-4 text-xs text-[#a7a9be]">
-              Score 6+ for $5 · Score 12+ for $10 · Score 20+ for $15
+              Score 6+ → $30 · Score 12+ → $55 · Score 20+ → $80
             </div>
             <button
               type="button"

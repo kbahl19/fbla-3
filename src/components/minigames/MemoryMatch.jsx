@@ -32,7 +32,7 @@ function buildDeck() {
   return cards;
 }
 
-const getEarnings = (matches) => Math.min(matches * 2, 16);
+const getEarnings = (matches) => Math.min(matches * 10, 80);
 
 export default function MemoryMatch({ onFinish, onBack }) {
   const [deck, setDeck] = useState(() => buildDeck());

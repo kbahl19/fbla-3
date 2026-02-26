@@ -12,10 +12,10 @@ const MIN_WINDOW_MS = 500;
 const DELAY_BETWEEN_MS = 600;
 
 const getEarnings = (hits) => {
-  if (hits >= 13) return 15;
-  if (hits >= 9) return 10;
-  if (hits >= 5) return 5;
-  if (hits >= 1) return 2;
+  if (hits >= 13) return 80;
+  if (hits >= 9) return 55;
+  if (hits >= 5) return 30;
+  if (hits >= 1) return 10;
   return 0;
 };
 

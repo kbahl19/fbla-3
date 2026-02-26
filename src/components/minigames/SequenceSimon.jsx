@@ -19,7 +19,7 @@ const START_LENGTH = 3;
 const SHOW_DELAY_MS = 550; // time each item lights up
 const SHOW_GAP_MS = 200;
 
-const getEarnings = (roundsCompleted) => roundsCompleted * 3;
+const getEarnings = (roundsCompleted) => roundsCompleted * 15;
 
 export default function SequenceSimon({ onFinish, onBack }) {
   const [phase, setPhase] = useState('idle'); // idle | showing | input | fail | done

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { validateBudget, validateItemCost, validateSavingsGoal, validateStatChange } from '../utils/validators';
+import { validateBudget, validateItemCost, validateStatChange } from '../utils/validators';
 
 const createExpense = (category, item, cost) => ({
   id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -19,8 +19,10 @@ export default function useFinance(initialBudget) {
     wallet: initialBudget || 0,
     budget: initialBudget || 0,
     totalSpent: 0,
-    savingsGoal: null,
-    savingsGoalName: null,
+    preventiveSpending: 0,
+    emergencySpending: 0,
+    currentWeekSpending: 0,
+    weeklySpending: [],
     expenses: []
   });
 
@@ -32,8 +34,10 @@ export default function useFinance(initialBudget) {
       wallet: initialBudget,
       budget: initialBudget,
       totalSpent: 0,
-      savingsGoal: null,
-      savingsGoalName: null,
+      preventiveSpending: 0,
+      emergencySpending: 0,
+      currentWeekSpending: 0,
+      weeklySpending: [],
       expenses: []
     };
     initialRef.current = next;
@@ -45,9 +49,10 @@ export default function useFinance(initialBudget) {
    * @param {number} amount
    * @param {string} category
    * @param {string} item
+   * @param {boolean} isPreventive - true = preventive care, false = emergency/reactive
    * @returns {{ valid: boolean, error: string|null }}
    */
-  const spend = (amount, category, item) => {
+  const spend = (amount, category, item, isPreventive = true) => {
     const validation = validateItemCost(amount, financeState.wallet);
     if (!validation.valid) return validation;
 
@@ -55,6 +60,9 @@ export default function useFinance(initialBudget) {
       ...prev,
       wallet: prev.wallet - amount,
       totalSpent: prev.totalSpent + amount,
+      preventiveSpending: isPreventive ? prev.preventiveSpending + amount : prev.preventiveSpending,
+      emergencySpending:  isPreventive ? prev.emergencySpending  : prev.emergencySpending + amount,
+      currentWeekSpending: prev.currentWeekSpending + amount,
       expenses: [createExpense(category, item, amount), ...prev.expenses]
     }));
 
@@ -93,22 +101,15 @@ export default function useFinance(initialBudget) {
   };
 
   /**
-   * Sets the savings goal and label.
-   * @param {number} amount
-   * @param {string} name
-   * @returns {{ valid: boolean, error: string|null }}
+   * Closes out the current week: pushes this week's spending into weeklySpending
+   * and resets the running currentWeekSpending counter.
    */
-  const setSavingsGoal = (amount, name) => {
-    const validation = validateSavingsGoal(amount, financeState.budget);
-    if (!validation.valid) return validation;
-
+  const recordWeekEnd = () => {
     setFinanceState((prev) => ({
       ...prev,
-      savingsGoal: amount,
-      savingsGoalName: name || 'Savings Goal'
+      weeklySpending: [...prev.weeklySpending, prev.currentWeekSpending],
+      currentWeekSpending: 0
     }));
-
-    return { valid: true, error: null };
   };
 
   /**
@@ -141,8 +142,10 @@ export default function useFinance(initialBudget) {
       wallet: nextBudget,
       budget: nextBudget,
       totalSpent: 0,
-      savingsGoal: null,
-      savingsGoalName: null,
+      preventiveSpending: 0,
+      emergencySpending: 0,
+      currentWeekSpending: 0,
+      weeklySpending: [],
       expenses: []
     };
     initialRef.current = next;
@@ -156,7 +159,7 @@ export default function useFinance(initialBudget) {
     spend,
     earn,
     chargeBill,
-    setSavingsGoal,
+    recordWeekEnd,
     getExpenseReport,
     resetFinance
   };

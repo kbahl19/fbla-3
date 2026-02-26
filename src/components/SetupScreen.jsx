@@ -1,358 +1,211 @@
 /**
- * Setup screen for creating a new pet session.
+ * Character creator screen — options left, pet preview right.
  * Props: onStart({ name, type, ownerName, customization })
  */
 import { useMemo, useState } from 'react';
 import { PETS } from '../data/pets';
-import {
-  ACCESSORIES,
-  COLOR_THEMES,
-  PERSONALITIES,
-  DEFAULT_CUSTOMIZATION,
-  getCustomizationMeta
-} from '../data/customization';
-import {
-  validateDistinctNames,
-  validateOwnerName,
-  validatePetName,
-  validateSelection
-} from '../utils/validators';
-
-function ChoicePillGroup({ label, options, value, onChange, accent }) {
-  return (
-    <div className="grid gap-3">
-      <label className="text-sm uppercase tracking-wide text-[#a7a9be]">{label}</label>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {options.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            onClick={() => onChange(option.id)}
-            className={`rounded-xl border px-3 py-3 text-left transition ${
-              value === option.id ? 'bg-[#252338]' : 'bg-[#1f1d2f] hover:-translate-y-0.5'
-            }`}
-            style={{
-              borderColor: value === option.id ? accent : 'rgba(255,255,255,0.08)',
-              boxShadow: value === option.id ? `0 0 0 1px ${accent}20 inset` : 'none'
-            }}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-white">{option.label}</span>
-              {option.emoji && <span className="text-lg">{option.emoji}</span>}
-            </div>
-            {'description' in option && option.description && (
-              <p className="mt-1 text-xs text-[#a7a9be]">{option.description}</p>
-            )}
-            {'tagline' in option && option.tagline && (
-              <p className="mt-1 text-xs text-[#a7a9be]">{option.tagline}</p>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { ANIMAL_COLORS, ACCESSORIES, DEFAULT_CUSTOMIZATION, getCustomizationMeta } from '../data/customization';
+import { validateDistinctNames, validateOwnerName, validatePetName, validateSelection } from '../utils/validators';
 
 export default function SetupScreen({ onStart }) {
-  const [petName, setPetName] = useState('');
+  const [petName, setPetName]     = useState('');
   const [ownerName, setOwnerName] = useState('');
-  const [petType, setPetType] = useState(PETS[0]?.id || 'dog');
+  const [petType, setPetType]     = useState(PETS[0]?.id || 'dog');
   const [customization, setCustomization] = useState(DEFAULT_CUSTOMIZATION);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors]       = useState({});
 
-  const liveOwnerValidation = validateOwnerName(ownerName);
-  const livePetValidation = validatePetName(petName);
-  const liveDistinctValidation = validateDistinctNames(ownerName, petName);
+  const petMeta = useMemo(() => PETS.find((p) => p.id === petType) || PETS[0], [petType]);
+  const meta    = useMemo(() => getCustomizationMeta(customization), [customization]);
 
-  const petMeta = useMemo(
-    () => PETS.find((pet) => pet.id === petType) || PETS[0],
-    [petType]
-  );
-  const previewMeta = getCustomizationMeta(customization);
-  const accent = previewMeta.theme.accent;
+  const setColor     = (animalColor) => setCustomization((prev) => ({ ...prev, animalColor }));
+  const setAccessory = (accessory)   => setCustomization((prev) => ({ ...prev, accessory }));
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleSubmit = () => {
+    const nameV    = validatePetName(petName);
+    const ownerV   = validateOwnerName(ownerName);
+    const distinctV = validateDistinctNames(ownerName, petName);
+    const typeV    = validateSelection(petType, PETS.map((p) => p.id), 'Pet type');
+    const colorV   = validateSelection(customization.animalColor, ANIMAL_COLORS.map((c) => c.id), 'Color');
+    const accV     = validateSelection(customization.accessory,   ACCESSORIES.map((a) => a.id),   'Accessory');
 
-    const nameValidation = validatePetName(petName);
-    const ownerValidation = validateOwnerName(ownerName);
-    const distinctValidation = validateDistinctNames(ownerName, petName);
-    const typeValid = validateSelection(petType, PETS.map((pet) => pet.id), 'Pet type');
-    const colorThemeValid = validateSelection(
-      customization.colorTheme,
-      COLOR_THEMES.map((theme) => theme.id),
-      'Color theme'
-    );
-    const accessoryValid = validateSelection(
-      customization.accessory,
-      ACCESSORIES.map((item) => item.id),
-      'Accessory'
-    );
-    const personalityValid = validateSelection(
-      customization.personality,
-      PERSONALITIES.map((item) => item.id),
-      'Personality'
-    );
-
-    const nextErrors = {
-      petName: nameValidation.valid ? null : nameValidation.error,
-      ownerName: ownerValidation.valid ? null : ownerValidation.error,
-      petType: typeValid.valid ? null : typeValid.error,
-      colorTheme: colorThemeValid.valid ? null : colorThemeValid.error,
-      accessory: accessoryValid.valid ? null : accessoryValid.error,
-      personality: personalityValid.valid ? null : personalityValid.error,
-      setup: distinctValidation.valid ? null : distinctValidation.error
+    const next = {
+      petName:   nameV.valid    ? null : nameV.error,
+      ownerName: ownerV.valid   ? null : ownerV.error,
+      petType:   typeV.valid    ? null : typeV.error,
+      color:     colorV.valid   ? null : colorV.error,
+      accessory: accV.valid     ? null : accV.error,
+      setup:     distinctV.valid ? null : distinctV.error
     };
+    setErrors(next);
 
-    setErrors(nextErrors);
-
-    const isValid =
-      nameValidation.valid &&
-      ownerValidation.valid &&
-      distinctValidation.valid &&
-      typeValid.valid &&
-      colorThemeValid.valid &&
-      accessoryValid.valid &&
-      personalityValid.valid;
-
-    if (!isValid) return;
-
-    onStart({
-      name: petName.trim(),
-      type: petType,
-      ownerName: ownerName.trim(),
-      customization: previewMeta.customization
-    });
+    if (nameV.valid && ownerV.valid && distinctV.valid && typeV.valid && colorV.valid && accV.valid) {
+      onStart({ name: petName.trim(), type: petType, ownerName: ownerName.trim(), customization: meta.customization });
+    }
   };
 
+  const anyError = Object.values(errors).some(Boolean);
+
   return (
-    <div className="min-h-screen px-4 py-6 sm:px-6 sm:py-10">
-      <div className="mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-[#141322]/90 p-5 shadow-xl sm:p-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="h-screen w-screen overflow-hidden bg-[#0d0c1a] flex flex-col">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-8 py-4 border-b border-white/5">
+        <span className="font-heading text-2xl text-[#ffd93d] tracking-wide">PetPal</span>
+        <span className="text-sm text-[#a7a9be]">Build Your Character</span>
+        <div className="rounded-xl border border-white/10 bg-[#1a1828] px-4 py-2 text-sm">
+          <span className="text-[#a7a9be]">Start: </span>
+          <span className="font-heading text-[#6bcb77]">$200</span>
+        </div>
+      </div>
+
+      {/* Main two-column layout */}
+      <div className="flex flex-1 min-h-0">
+
+        {/* LEFT — options panel */}
+        <div className="flex flex-col gap-5 px-8 py-6 w-[420px] shrink-0 overflow-y-auto border-r border-white/5">
+
+          {/* Pet type */}
           <div>
-            <h1 className="font-heading text-4xl text-[#ffd93d]">PetPal Character Creator</h1>
-            <p className="mt-2 max-w-3xl text-[#a7a9be]">
-              Build your pet companion for the 12-week budgeting challenge. Customize the look and personality, then manage cost-of-care decisions to finish with the best score.
-            </p>
+            <p className="text-xs uppercase tracking-widest text-[#a7a9be] mb-3">Choose Pet</p>
+            <div className="grid grid-cols-3 gap-2">
+              {PETS.map((pet) => (
+                <button
+                  key={pet.id}
+                  type="button"
+                  onClick={() => setPetType(pet.id)}
+                  className={`rounded-xl border px-2 py-3 flex flex-col items-center gap-1 transition-all duration-150 ${
+                    petType === pet.id
+                      ? 'border-[#ffd93d] bg-[#ffd93d]/10'
+                      : 'border-white/8 bg-[#1a1828] hover:border-white/20'
+                  }`}
+                >
+                  <span className="text-2xl">{pet.emoji_baby}</span>
+                  <span className="text-xs font-semibold text-white">{pet.name}</span>
+                </button>
+              ))}
+            </div>
+            {errors.petType && <p className="mt-1 text-xs text-[#ff6b6b]">{errors.petType}</p>}
           </div>
-          <div className="rounded-2xl border border-white/10 bg-[#1f1d2f] px-4 py-3 text-sm">
-            <p className="text-[#a7a9be]">Starting Balance</p>
-            <p className="font-heading text-2xl text-[#6bcb77]">$200.00</p>
+
+          {/* Animal color */}
+          <div>
+            <p className="text-xs uppercase tracking-widest text-[#a7a9be] mb-3">Color</p>
+            <div className="flex gap-3 flex-wrap">
+              {ANIMAL_COLORS.map((color) => (
+                <button
+                  key={color.id}
+                  type="button"
+                  onClick={() => setColor(color.id)}
+                  title={color.label}
+                  className={`w-10 h-10 rounded-full border-2 transition-all duration-150 ${
+                    customization.animalColor === color.id
+                      ? 'scale-125 border-white'
+                      : 'border-transparent hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: color.hex, boxShadow: customization.animalColor === color.id ? `0 0 12px ${color.hex}` : 'none' }}
+                />
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-[#a7a9be]">{meta.color.label}</p>
+            {errors.color && <p className="mt-1 text-xs text-[#ff6b6b]">{errors.color}</p>}
           </div>
+
+          {/* Accessory */}
+          <div>
+            <p className="text-xs uppercase tracking-widest text-[#a7a9be] mb-3">Accessory</p>
+            <div className="flex gap-2">
+              {ACCESSORIES.map((acc) => (
+                <button
+                  key={acc.id}
+                  type="button"
+                  onClick={() => setAccessory(acc.id)}
+                  className={`flex-1 rounded-xl border py-3 flex flex-col items-center gap-1 transition-all duration-150 ${
+                    customization.accessory === acc.id
+                      ? 'border-[#ffd93d] bg-[#ffd93d]/10'
+                      : 'border-white/8 bg-[#1a1828] hover:border-white/20'
+                  }`}
+                >
+                  <span className="text-xl">{acc.emoji}</span>
+                  <span className="text-xs font-semibold text-white">{acc.label}</span>
+                </button>
+              ))}
+            </div>
+            {errors.accessory && <p className="mt-1 text-xs text-[#ff6b6b]">{errors.accessory}</p>}
+          </div>
+
+          {/* Name inputs */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#a7a9be] mb-2">Your Name</p>
+              <input
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                maxLength={30}
+                placeholder="Your name"
+                className="w-full rounded-xl border border-white/10 bg-[#1a1828] px-3 py-2.5 text-sm text-white outline-none focus:border-[#ffd93d] placeholder:text-[#4a4869]"
+              />
+              {errors.ownerName && <p className="mt-1 text-xs text-[#ff6b6b]">{errors.ownerName}</p>}
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[#a7a9be] mb-2">Pet Name</p>
+              <input
+                value={petName}
+                onChange={(e) => setPetName(e.target.value)}
+                maxLength={20}
+                placeholder="e.g. Nova"
+                className="w-full rounded-xl border border-white/10 bg-[#1a1828] px-3 py-2.5 text-sm text-white outline-none focus:border-[#ffd93d] placeholder:text-[#4a4869]"
+              />
+              {errors.petName && <p className="mt-1 text-xs text-[#ff6b6b]">{errors.petName}</p>}
+            </div>
+          </div>
+          {errors.setup && <p className="-mt-2 text-xs text-[#ff6b6b]">{errors.setup}</p>}
+
+          {/* Start button */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="mt-auto rounded-2xl py-4 font-heading text-lg text-[#0d0c1a] bg-[#ffd93d] hover:bg-[#ffe566] active:scale-95 transition-all duration-150 shadow-lg"
+            style={{ boxShadow: '0 4px 24px rgba(255,217,61,0.35)' }}
+          >
+            Start Game →
+          </button>
+          {anyError && <p className="text-center text-xs text-[#ff6b6b]">Please fix the errors above.</p>}
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <form onSubmit={handleSubmit} className="grid gap-6 rounded-2xl border border-white/10 bg-[#1a1828]/70 p-5 sm:p-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <label className="text-sm uppercase tracking-wide text-[#a7a9be]">Your Name</label>
-                <input
-                  value={ownerName}
-                  onChange={(event) => setOwnerName(event.target.value)}
-                  maxLength={30}
-                  className="rounded-xl border border-white/10 bg-[#252338] px-4 py-3 text-white outline-none focus:border-[#4d96ff]"
-                  placeholder="Your name"
-                />
-                <p className={`text-xs ${ownerName.trim() && !liveOwnerValidation.valid ? 'text-[#ff6b6b]' : 'text-[#a7a9be]'}`}>
-                  {ownerName.trim()
-                    ? (liveOwnerValidation.valid ? 'Valid owner name.' : liveOwnerValidation.error)
-                    : 'Required. Letters, numbers, spaces, apostrophes, periods, and hyphens allowed.'}
-                </p>
-                {errors.ownerName && <p className="text-sm text-[#ff6b6b]">{errors.ownerName}</p>}
-              </div>
+        {/* RIGHT — pet preview */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 relative overflow-hidden">
+          {/* Background glow matching color */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: `radial-gradient(circle at 50% 45%, ${meta.color.glow}, transparent 65%)` }}
+          />
 
-              <div className="grid gap-2">
-                <label className="text-sm uppercase tracking-wide text-[#a7a9be]">Pet Name</label>
-                <input
-                  value={petName}
-                  onChange={(event) => setPetName(event.target.value)}
-                  maxLength={20}
-                  className="rounded-xl border border-white/10 bg-[#252338] px-4 py-3 text-white outline-none focus:border-[#4d96ff]"
-                  placeholder="e.g. Nova"
-                />
-                <p className={`text-xs ${petName.trim() && !livePetValidation.valid ? 'text-[#ff6b6b]' : 'text-[#a7a9be]'}`}>
-                  {petName.trim()
-                    ? (livePetValidation.valid ? 'Valid pet name.' : livePetValidation.error)
-                    : 'Required. Letters, numbers, and spaces only (20 max).'}
-                </p>
-                {errors.petName && <p className="text-sm text-[#ff6b6b]">{errors.petName}</p>}
-              </div>
-            </div>
+          {/* Pet circle */}
+          <div
+            className="relative flex items-center justify-center rounded-full border-2 text-[9rem] animate-pet-float shadow-2xl"
+            style={{
+              width: '260px',
+              height: '260px',
+              borderColor: `${meta.color.hex}66`,
+              background: `radial-gradient(circle, ${meta.color.glow}, rgba(13,12,26,0.6))`,
+              boxShadow: `0 0 60px ${meta.color.glow}, 0 0 120px ${meta.color.glow}`
+            }}
+          >
+            {petMeta?.emoji_baby}
+            {/* Accessory */}
+            <span className="absolute top-4 right-6 text-4xl drop-shadow-lg">
+              {meta.accessory.emoji}
+            </span>
+          </div>
 
-            <div className="rounded-xl border border-white/10 bg-[#201e30] p-4">
-              <p className="text-xs uppercase tracking-wide text-[#a7a9be]">Validation Check</p>
-              <p className={`mt-2 text-sm ${liveDistinctValidation.valid ? 'text-[#6bcb77]' : 'text-[#ff6b6b]'}`}>
-                {liveDistinctValidation.valid
-                  ? 'Names are distinct and easier to read in reports and leaderboard entries.'
-                  : liveDistinctValidation.error}
-              </p>
-              {errors.setup && <p className="mt-2 text-sm text-[#ff6b6b]">{errors.setup}</p>}
-            </div>
-
-            <div className="grid gap-3">
-              <label className="text-sm uppercase tracking-wide text-[#a7a9be]">Choose Your Pet</label>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {PETS.map((pet) => (
-                  <button
-                    key={pet.id}
-                    type="button"
-                    onClick={() => setPetType(pet.id)}
-                    className={`rounded-2xl border px-4 py-4 text-left transition hover:-translate-y-1 ${
-                      petType === pet.id ? 'bg-[#252338]' : 'bg-[#1f1d2f]'
-                    }`}
-                    style={{
-                      borderColor: petType === pet.id ? accent : 'rgba(255,255,255,0.08)',
-                      boxShadow: petType === pet.id ? `0 0 0 1px ${accent}25 inset` : 'none'
-                    }}
-                  >
-                    <div className="text-3xl">{pet.emoji_baby}</div>
-                    <div className="mt-2 font-heading text-lg text-white">{pet.name}</div>
-                    <p className="mt-1 text-xs text-[#a7a9be]">{pet.description}</p>
-                  </button>
-                ))}
-              </div>
-              {errors.petType && <p className="text-sm text-[#ff6b6b]">{errors.petType}</p>}
-            </div>
-
-            <ChoicePillGroup
-              label="Color Theme"
-              options={COLOR_THEMES}
-              value={customization.colorTheme}
-              onChange={(colorTheme) => setCustomization((prev) => ({ ...prev, colorTheme }))}
-              accent={accent}
-            />
-            {errors.colorTheme && <p className="-mt-3 text-sm text-[#ff6b6b]">{errors.colorTheme}</p>}
-
-            <ChoicePillGroup
-              label="Accessory"
-              options={ACCESSORIES}
-              value={customization.accessory}
-              onChange={(accessory) => setCustomization((prev) => ({ ...prev, accessory }))}
-              accent={accent}
-            />
-            {errors.accessory && <p className="-mt-3 text-sm text-[#ff6b6b]">{errors.accessory}</p>}
-
-            <ChoicePillGroup
-              label="Personality"
-              options={PERSONALITIES}
-              value={customization.personality}
-              onChange={(personality) => setCustomization((prev) => ({ ...prev, personality }))}
-              accent={accent}
-            />
-            {errors.personality && <p className="-mt-3 text-sm text-[#ff6b6b]">{errors.personality}</p>}
-
-            <div className="rounded-2xl border border-white/10 bg-[#252338] px-5 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-[#a7a9be]">12-Week Challenge Rules</p>
-                  <p className="mt-1 text-sm text-white">Bills are charged weekly. Salary depends on pet health. Minigames can boost income.</p>
-                </div>
-                <div className="grid gap-1 text-right text-xs text-[#a7a9be]">
-                  <p>12 weeks | $20/wk bills</p>
-                  <p className="text-[#6bcb77]">$15-$30/wk salary if healthy</p>
-                  <p className="text-[#4d96ff]">Final score = wallet + average stats x 2</p>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="rounded-2xl px-6 py-4 font-heading text-lg text-white transition hover:scale-[1.01] active:scale-[0.99]"
-              style={{ backgroundColor: accent }}
-            >
-              Begin the 12-Week Journey
-            </button>
-          </form>
-
-          <div className="grid gap-6 content-start">
-            <div
-              className="relative overflow-hidden rounded-3xl border border-white/10 p-5 shadow-xl sm:p-6"
-              style={{ background: previewMeta.theme.surface }}
-            >
-              <div
-                className="pointer-events-none absolute inset-0 opacity-80"
-                style={{ background: previewMeta.theme.halo }}
-                aria-hidden="true"
-              />
-              <div className="relative">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.16em] text-[#d4d6eb]">Live Preview</p>
-                    <h2 className="mt-1 font-heading text-2xl text-white">Companion Profile</h2>
-                  </div>
-                  <span
-                    className="rounded-full border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: `${accent}55`, backgroundColor: previewMeta.theme.accentSoft, color: accent }}
-                  >
-                    {previewMeta.theme.label}
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-5 rounded-2xl border border-white/10 bg-[#151424]/80 p-5">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="relative flex h-24 w-24 items-center justify-center rounded-2xl border text-5xl shadow-lg"
-                      style={{ borderColor: `${accent}55`, backgroundColor: 'rgba(255,255,255,0.03)' }}
-                    >
-                      <span className="animate-pet-float">{petMeta?.emoji_baby}</span>
-                      <span className="absolute -right-2 -top-2 text-2xl">{previewMeta.accessory.emoji}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-heading text-2xl text-white">{petName.trim() || 'Your Pet'}</p>
-                      <p className="text-sm text-[#cfd2ea]">
-                        {petMeta?.name || 'Pet'} • Owner: {ownerName.trim() || 'Player'}
-                      </p>
-                      <p className="mt-1 text-xs text-[#a7a9be]">{petMeta?.description}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-xl border border-white/10 bg-[#1f1d2f] p-3">
-                      <p className="text-xs uppercase tracking-wide text-[#a7a9be]">Theme</p>
-                      <p className="mt-1 font-semibold text-white">{previewMeta.theme.label}</p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-[#1f1d2f] p-3">
-                      <p className="text-xs uppercase tracking-wide text-[#a7a9be]">Accessory</p>
-                      <p className="mt-1 font-semibold text-white">
-                        {previewMeta.accessory.emoji} {previewMeta.accessory.label}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-[#1f1d2f] p-3">
-                      <p className="text-xs uppercase tracking-wide text-[#a7a9be]">Personality</p>
-                      <p className="mt-1 font-semibold text-white">
-                        {previewMeta.personality.emoji} {previewMeta.personality.label}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-white/10 bg-[#1f1d2f] p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className="rounded-full px-3 py-1 text-xs font-semibold"
-                        style={{ backgroundColor: previewMeta.theme.accentSoft, color: accent }}
-                      >
-                        Style Locked In
-                      </span>
-                      <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-[#d4d6eb]">
-                        {previewMeta.personality.tagline}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-[#cfd2ea]">
-                      "{petName.trim() || 'Your pet'}" starts with a {previewMeta.personality.label.toLowerCase()} vibe and a {previewMeta.accessory.label.toLowerCase()} look. This profile carries into the live game display so the setup choices stay visible.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-[#4d96ff]/30 bg-[#4d96ff]/10 p-5">
-              <h3 className="font-heading text-lg text-[#4d96ff]">Judge-Friendly Highlights</h3>
-              <ul className="mt-3 grid gap-2 text-sm text-[#d4d6eb]">
-                <li>Live preview updates instantly as you customize.</li>
-                <li>Validation checks both formatting and setup semantics.</li>
-                <li>Customization is stored safely with defaults for compatibility.</li>
-              </ul>
-            </div>
+          {/* Name display */}
+          <div className="relative text-center">
+            <p className="font-heading text-4xl text-white drop-shadow">{petName.trim() || 'Your Pet'}</p>
+            <p className="mt-1 text-sm text-[#a7a9be]">
+              {petMeta?.name} · {meta.color.label} · {meta.accessory.emoji} {meta.accessory.label}
+            </p>
+            {ownerName.trim() && (
+              <p className="mt-1 text-xs text-[#6b7280]">Owner: {ownerName.trim()}</p>
+            )}
           </div>
         </div>
       </div>

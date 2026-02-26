@@ -2,7 +2,7 @@ export const FOOD_ITEMS = [
   {
     id: 'basic_kibble',
     name: 'Basic Kibble',
-    cost: 2,
+    cost: 8,
     hungerRestore: 15,
     happinessBonus: 0,
     emoji: '🥣'
@@ -10,7 +10,7 @@ export const FOOD_ITEMS = [
   {
     id: 'premium_meal',
     name: 'Premium Meal',
-    cost: 6,
+    cost: 18,
     hungerRestore: 30,
     happinessBonus: 5,
     emoji: '🍲'
@@ -18,7 +18,7 @@ export const FOOD_ITEMS = [
   {
     id: 'gourmet_feast',
     name: 'Gourmet Feast',
-    cost: 12,
+    cost: 32,
     hungerRestore: 50,
     happinessBonus: 15,
     emoji: '🍱'
@@ -26,7 +26,7 @@ export const FOOD_ITEMS = [
   {
     id: 'mystery_snack',
     name: 'Mystery Snack',
-    cost: 1,
+    cost: 4,
     hungerRestore: 5,
     happinessBonus: 0,
     emoji: '🎁'
@@ -37,7 +37,7 @@ export const TOY_ITEMS = [
   {
     id: 'yarn_ball',
     name: 'Yarn Ball',
-    cost: 3,
+    cost: 10,
     happinessRestore: 20,
     energyCost: 10,
     emoji: '🧶'
@@ -45,7 +45,7 @@ export const TOY_ITEMS = [
   {
     id: 'puzzle_toy',
     name: 'Puzzle Toy',
-    cost: 8,
+    cost: 22,
     happinessRestore: 35,
     energyCost: 15,
     emoji: '🧩'
@@ -53,26 +53,29 @@ export const TOY_ITEMS = [
   {
     id: 'luxury_playset',
     name: 'Luxury Playset',
-    cost: 15,
+    cost: 40,
     happinessRestore: 50,
     energyCost: 20,
     emoji: '🎠'
   }
+
 ];
 
 export const VET_OPTIONS = [
   {
     id: 'checkup',
     name: 'Checkup',
-    cost: 10,
+    cost: 25,
     healthRestore: 20,
-    emoji: '🩺'
+    emoji: '🩺',
+    preventive: true
   },
   {
     id: 'full_treatment',
     name: 'Full Treatment',
-    cost: 25,
+    cost: 60,
     healthRestore: 50,
-    emoji: '🏥'
+    emoji: '🏥',
+    preventive: false
   }
 ];

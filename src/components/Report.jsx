@@ -3,36 +3,26 @@
  * Props: petState, financeState, weeksPlayed, onSaveLeaderboard, onPlayAgain, onLeaderboard
  */
 import { useMemo, useState } from 'react';
-import { calculateCareGrade, calculateScore, calculateAvgStat, formatCurrency } from '../utils/helpers';
-
-const gradeColors = {
-  A: 'text-[#6bcb77]',
-  B: 'text-[#ffd93d]',
-  C: 'text-[#4d96ff]',
-  D: 'text-[#ff9f1c]',
-  F: 'text-[#ff6b6b]'
-};
-
-const SCORE_TIERS = [
-  { min: 400, label: 'Legendary Owner', color: 'text-[#ffd93d]' },
-  { min: 300, label: 'Expert Owner', color: 'text-[#6bcb77]' },
-  { min: 200, label: 'Good Owner', color: 'text-[#4d96ff]' },
-  { min: 100, label: 'Learning Owner', color: 'text-[#c77dff]' },
-  { min: 0, label: 'Struggling Owner', color: 'text-[#ff6b6b]' }
-];
-
-function getScoreTier(score) {
-  return SCORE_TIERS.find((t) => score >= t.min) || SCORE_TIERS[SCORE_TIERS.length - 1];
-}
+import { formatCurrency } from '../utils/helpers';
+import { ScoringEngine } from '../utils/scoringEngine';
 
 export default function Report({ petState, financeState, weeksPlayed, onSaveLeaderboard, onPlayAgain, onLeaderboard }) {
   const [saved, setSaved] = useState(false);
 
-  const careGrade = calculateCareGrade(petState);
-  const gradeClass = gradeColors[careGrade] || 'text-white';
-  const avgStat = calculateAvgStat(petState);
-  const finalScore = calculateScore(petState, financeState);
-  const scoreTier = getScoreTier(finalScore);
+  const scoring = useMemo(() => {
+    // Always include a final live snapshot so there's at least one data point
+    const snapshots = [
+      ...(petState.dailySnapshots || []),
+      { happiness: petState.happiness, health: petState.health, energy: petState.energy }
+    ];
+    const engine = new ScoringEngine({
+      dailySnapshots:     snapshots,
+      weeklySpending:     financeState.weeklySpending || [],
+      preventiveSpending: financeState.preventiveSpending || 0,
+      emergencySpending:  financeState.emergencySpending  || 0
+    });
+    return engine.calculate_final_score();
+  }, [petState.dailySnapshots, petState.happiness, petState.health, petState.energy, financeState.weeklySpending, financeState.preventiveSpending, financeState.emergencySpending]);
 
   const expenseBreakdown = useMemo(() => {
     const totals = financeState.expenses.reduce((acc, expense) => {
@@ -86,14 +76,13 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
     if ((actionCounts.vet || 0) === 0) insights.push('No health checks were recorded. Vet visits usually protect salary income.');
     if ((actionCounts.clean || 0) < 2) insights.push('Cleaning was used rarely. Low hygiene can reduce health over time.');
     if (financeState.wallet < 0) insights.push('The session ended in debt. Spending pace exceeded salary and minigame income.');
-    if (financeState.savingsGoal && financeState.wallet >= financeState.savingsGoal) insights.push('Savings goal was achieved while completing pet care.');
     if ((petState.mood === 'happy' || petState.mood === 'energetic') && petState.health >= 70) {
       insights.push(`Final pet reaction was ${petState.mood} with healthy stats, showing strong care balance.`);
     }
     if (insights.length === 0) insights.push('Care and spending stayed balanced overall, with no major risk pattern detected.');
 
     return { actionRows, biggestExpense, totalBills, totalIncome, insights };
-  }, [petState.actionLog, petState.mood, petState.health, financeState.expenses, financeState.wallet, financeState.savingsGoal]);
+  }, [petState.actionLog, petState.mood, petState.health, financeState.expenses, financeState.wallet]);
 
   const handleSave = () => {
     if (saved) return;
@@ -101,9 +90,8 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
       ownerName: petState.ownerName,
       petName: petState.name,
       petType: petState.type,
-      careGrade,
-      finalScore,
-      avgStat,
+      finalScore: scoring.final,
+      classification: scoring.classification.label,
       wallet: financeState.wallet,
       totalSpent: financeState.totalSpent,
       weeksPlayed,
@@ -113,12 +101,6 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
     onSaveLeaderboard(entry);
     setSaved(true);
   };
-
-  const savingsStatus = financeState.savingsGoal
-    ? financeState.wallet >= financeState.savingsGoal
-      ? `Goal met: ${formatCurrency(financeState.savingsGoal)}`
-      : `${formatCurrency(financeState.savingsGoal - financeState.wallet)} short`
-    : 'No goal set';
 
   return (
     <div className="min-h-screen px-6 py-10">
@@ -157,14 +139,29 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
         {/* Final Score hero */}
         <div className="mt-6 rounded-2xl border border-[#ffd93d]/40 bg-[#ffd93d]/10 p-6 text-center">
           <p className="text-sm uppercase tracking-wide text-[#a7a9be]">Final Score</p>
-          <p className="mt-2 font-heading text-6xl text-[#ffd93d]">{finalScore}</p>
-          <p className={`mt-2 font-heading text-xl ${scoreTier.color}`}>{scoreTier.label}</p>
-          <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs text-[#a7a9be]">
-            <span>Wallet: <span className="text-white">{formatCurrency(Math.max(0, financeState.wallet))}</span></span>
-            <span>+</span>
-            <span>Avg Stats ({avgStat}/100): <span className="text-white">+{avgStat * 2} pts</span></span>
+          <p className="mt-2 font-heading text-7xl text-[#ffd93d]">{scoring.final}</p>
+          <p className="mt-1 font-heading text-xl" style={{ color: scoring.classification.color }}>
+            {scoring.classification.label}
+          </p>
+
+          {/* Component breakdown */}
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Wellbeing',    value: scoring.wellbeing,   weight: '40%', color: '#6bcb77', desc: 'happiness · health · energy' },
+              { label: 'Financial',    value: scoring.financial,   weight: '30%', color: '#4d96ff', desc: 'preventive vs emergency' },
+              { label: 'Consistency',  value: scoring.consistency, weight: '20%', color: '#c77dff', desc: 'steady week-to-week care' },
+              { label: 'Volatility',   value: scoring.volatility,  weight: '−10%', color: '#ff6b6b', desc: 'spending spike penalty' }
+            ].map((c) => (
+              <div key={c.label} className="rounded-xl border border-white/10 bg-[#1a1828] p-3">
+                <p className="text-xs text-[#a7a9be]">{c.label} <span className="text-white/40">{c.weight}</span></p>
+                <p className="mt-1 font-heading text-2xl" style={{ color: c.color }}>{c.value}</p>
+                <p className="mt-1 text-[10px] text-[#6b7280]">{c.desc}</p>
+              </div>
+            ))}
           </div>
-          <p className="mt-2 text-xs text-[#a7a9be]">Score formula: wallet + (average stats x 2)</p>
+          <p className="mt-3 text-xs text-[#a7a9be]">
+            0.4 × Wellbeing + 0.3 × Financial + 0.2 × Consistency − 0.1 × Volatility
+          </p>
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -173,24 +170,20 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
             <h3 className="font-heading text-xl text-white">Pet Care Summary</h3>
             <div className="mt-4 grid gap-3 text-sm text-[#a7a9be]">
               <div className="flex justify-between">
-                <span>Care Grade</span>
-                <span className={`font-heading text-2xl ${gradeClass}`}>{careGrade}</span>
+                <span>Wellbeing Score</span>
+                <span className="font-heading text-[#6bcb77]">{scoring.wellbeing}/100</span>
               </div>
               <div className="flex justify-between">
                 <span>Final Stage</span>
                 <span className="text-white capitalize">{petState.stage}</span>
               </div>
               <div className="flex justify-between">
-                <span>Pet Age</span>
-                <span className="text-white">{petState.age} weeks</span>
-              </div>
-              <div className="flex justify-between">
                 <span>Final Mood</span>
                 <span className="text-white capitalize">{petState.mood}</span>
               </div>
               <div className="flex justify-between">
-                <span>Average Stats</span>
-                <span className="text-white">{avgStat}/100</span>
+                <span>Weeks Tracked</span>
+                <span className="text-white">{petState.dailySnapshots?.length ?? 0}</span>
               </div>
               <div className="flex justify-between">
                 <span>Tricks Learned</span>
@@ -227,8 +220,12 @@ export default function Report({ petState, financeState, weeksPlayed, onSaveLead
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-2">Savings Goal Status</td>
-                  <td className="py-2 text-right text-white">{savingsStatus}</td>
+                  <td className="py-2">Preventive Spending</td>
+                  <td className="py-2 text-right text-[#6bcb77]">{formatCurrency(financeState.preventiveSpending || 0)}</td>
+                </tr>
+                <tr>
+                  <td className="py-2">Emergency Spending</td>
+                  <td className="py-2 text-right text-[#ff6b6b]">{formatCurrency(financeState.emergencySpending || 0)}</td>
                 </tr>
               </tbody>
             </table>

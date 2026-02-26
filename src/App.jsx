@@ -4,7 +4,6 @@ import PetDisplay from './components/PetDisplay';
 import StatBars from './components/StatBars';
 import ActionPanel from './components/ActionPanel';
 import FinancePanel from './components/FinancePanel';
-import BadgePanel from './components/BadgePanel';
 import Minigame from './components/Minigame';
 import Report from './components/Report';
 import Leaderboard from './components/Leaderboard';
@@ -14,9 +13,9 @@ import usePet, { PET_ACTIONS } from './hooks/usePet';
 import useFinance from './hooks/useFinance';
 import { formatCurrency } from './utils/helpers';
 
-const VIEWS = { SETUP: 'setup', GAME: 'game', MINIGAME: 'minigame', REPORT: 'report', LEADERBOARD: 'leaderboard' };
+const VIEWS = { LANDING: 'landing', SETUP: 'setup', GAME: 'game', MINIGAME: 'minigame', REPORT: 'report', LEADERBOARD: 'leaderboard' };
 
-export const TOTAL_WEEKS = 12;
+export const TOTAL_WEEKS = 4;
 export const WEEKLY_BILL = 20;
 export const WEEK_DURATION_MS = 90000; // 90 real seconds = 1 in-game week
 const STARTING_BUDGET = 200;
@@ -34,7 +33,7 @@ export function getSalaryLabel(health) {
 }
 
 export default function App() {
-  const [view, setView] = useState(VIEWS.SETUP);
+  const [view, setView] = useState(VIEWS.LANDING);
   const [config, setConfig] = useState(null);
   const [week, setWeek] = useState(1);
   const [weeklyModal, setWeeklyModal] = useState(null);
@@ -48,8 +47,8 @@ export default function App() {
   const financeStateRef = useRef(null);
   const gameEndedRef = useRef(false);
 
-  const { financeState, spend, earn, chargeBill, setSavingsGoal, resetFinance } = useFinance(STARTING_BUDGET);
-  const { petState, feed, play, rest, clean, healthCheck, learnTrick, recordMinigame, resetPet } =
+  const { financeState, spend, earn, chargeBill, recordWeekEnd, resetFinance } = useFinance(STARTING_BUDGET);
+  const { petState, feed, play, rest, clean, healthCheck, learnTrick, recordMinigame, recordDaySnapshot, resetPet } =
     usePet(config, financeState.wallet);
 
   // Keep refs fresh for use inside intervals
@@ -61,6 +60,26 @@ export default function App() {
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }, []);
+
+  // End game immediately when any critical stat hits 0
+  useEffect(() => {
+    if (view !== VIEWS.GAME || gameEndedRef.current) return;
+    const { health, hunger, energy, happiness, hygiene } = petState;
+    if (health <= 0 || hunger <= 0 || energy <= 0 || happiness <= 0 || hygiene <= 0) {
+      gameEndedRef.current = true;
+      recordDaySnapshot();
+      recordWeekEnd();
+      const currentWeek = weekRef.current;
+      setWeeklyModal({
+        completedWeek: currentWeek,
+        nextWeek: currentWeek + 1,
+        salary: 0,
+        petHealth: petState.health,
+        isGameOver: true,
+        petDied: true,
+      });
+    }
+  }, [petState.health, petState.hunger, petState.energy, petState.happiness, petState.hygiene, view, recordDaySnapshot, recordWeekEnd]);
 
   // Countdown timer display
   useEffect(() => {
@@ -83,13 +102,22 @@ export default function App() {
       const currentWeek = weekRef.current;
       const salary = getSalary(ps.health);
 
+      // Snapshot current stats before advancing the week (used by scoring engine)
+      recordDaySnapshot();
+      recordWeekEnd();
+
       chargeBill(WEEKLY_BILL, `Week ${currentWeek} living costs`);
       if (salary > 0) earn(salary, `Week ${currentWeek} salary`);
 
       const nextWeek = currentWeek + 1;
       weekRef.current = nextWeek;
       const isGameOver = nextWeek > TOTAL_WEEKS;
-      if (isGameOver) gameEndedRef.current = true;
+      if (isGameOver) {
+        gameEndedRef.current = true;
+        // Take one final snapshot at game end so scoring has all 4 data points
+        recordDaySnapshot();
+        recordWeekEnd();
+      }
 
       setWeek(nextWeek);
       setWeekMs(WEEK_DURATION_MS);
@@ -103,7 +131,7 @@ export default function App() {
       });
     }, WEEK_DURATION_MS);
     return () => clearInterval(interval);
-  }, [view, earn, chargeBill]);
+  }, [view, earn, chargeBill, recordDaySnapshot, recordWeekEnd]);
 
   const handleStart = useCallback((cfg) => {
     setConfig(cfg);
@@ -118,7 +146,7 @@ export default function App() {
   const handleFeed = useCallback((foodItem) => {
     const result = feed(foodItem);
     if (result.valid) {
-      spend(foodItem.cost, 'food', foodItem.name);
+      spend(foodItem.cost, 'food', foodItem.name, true);
       setActionFlag((f) => f + 1);
       addToast(`Fed ${petState.name} a ${foodItem.name}!`, 'success');
     } else {
@@ -130,7 +158,7 @@ export default function App() {
   const handlePlay = useCallback((toyItem) => {
     const result = play(toyItem);
     if (result.valid) {
-      spend(toyItem.cost, 'toys', toyItem.name);
+      spend(toyItem.cost, 'toys', toyItem.name, true);
       setActionFlag((f) => f + 1);
       addToast(`Played with ${petState.name} using ${toyItem.name}!`, 'success');
     } else {
@@ -153,7 +181,7 @@ export default function App() {
   const handleClean = useCallback(() => {
     const result = clean();
     if (result.valid) {
-      spend(PET_ACTIONS.cleanCost, 'cleaning', 'Bath time');
+      spend(PET_ACTIONS.cleanCost, 'cleaning', 'Bath time', true);
       setActionFlag((f) => f + 1);
       addToast(`${petState.name} is squeaky clean!`, 'success');
     } else {
@@ -165,7 +193,8 @@ export default function App() {
   const handleHealthCheck = useCallback((vetOption) => {
     const result = healthCheck(vetOption);
     if (result.valid) {
-      spend(vetOption.cost, 'vet', vetOption.name);
+      // checkup = preventive, full_treatment = emergency reactive care
+      spend(vetOption.cost, 'vet', vetOption.name, vetOption.preventive !== false);
       setActionFlag((f) => f + 1);
       addToast(`${petState.name} visited the vet for ${vetOption.name}!`, 'success');
     } else {
@@ -177,7 +206,7 @@ export default function App() {
   const handleLearnTrick = useCallback((trickName) => {
     const result = learnTrick(trickName);
     if (result.valid) {
-      spend(PET_ACTIONS.trickCost, 'tricks', trickName);
+      spend(PET_ACTIONS.trickCost, 'tricks', trickName, true);
       setActionFlag((f) => f + 1);
       addToast(`${petState.name} learned "${trickName}"!`, 'success');
     } else {
@@ -205,7 +234,7 @@ export default function App() {
     setWeekMs(WEEK_DURATION_MS);
     setWeeklyModal(null);
     setConfig(null);
-    setView(VIEWS.SETUP);
+    setView(VIEWS.LANDING);
   }, [resetPet, resetFinance]);
 
   const handleWeeklyClose = useCallback(() => {
@@ -221,6 +250,37 @@ export default function App() {
   const countdownLabel = `${countdownMin}:${String(countdownSec).padStart(2, '0')}`;
   const salaryInfo = getSalaryLabel(petState.health);
   const currentWeekDisplay = Math.min(week, TOTAL_WEEKS);
+
+  if (view === VIEWS.LANDING) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-[#0d0c1a] flex flex-col items-center justify-center gap-8 relative">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 40%, rgba(255,217,61,0.15), transparent 60%)' }} />
+
+        <div className="relative text-center flex flex-col items-center gap-4">
+          <h1 className="font-heading text-8xl text-[#ffd93d] drop-shadow-lg" style={{ textShadow: '0 0 60px rgba(255,217,61,0.5)' }}>
+            PetPal
+          </h1>
+          <p className="text-[#a7a9be] text-lg max-w-sm">
+            Raise your pet, manage your budget, and survive 12 weeks.
+          </p>
+          <div className="mt-2 rounded-xl border border-white/10 bg-[#1a1828] px-5 py-2 text-sm">
+            <span className="text-[#a7a9be]">Starting Balance: </span>
+            <span className="font-heading text-[#6bcb77]">$200.00</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setView(VIEWS.SETUP)}
+          className="relative rounded-2xl px-16 py-5 font-heading text-2xl text-[#0d0c1a] bg-[#ffd93d] hover:bg-[#ffe566] active:scale-95 transition-all duration-150"
+          style={{ boxShadow: '0 4px 40px rgba(255,217,61,0.5)' }}
+        >
+          Play
+        </button>
+      </div>
+    );
+  }
 
   if (view === VIEWS.SETUP) return <SetupScreen onStart={handleStart} />;
 
@@ -318,11 +378,6 @@ export default function App() {
         <div className="grid gap-6 content-start">
           <PetDisplay petState={petState} onAction={actionFlag} />
           <StatBars petState={petState} />
-          <BadgePanel
-            petState={petState}
-            financeState={financeState}
-            onBadgeEarned={(badge) => addToast(`Badge unlocked: ${badge.name} ${badge.emoji}`, 'badge')}
-          />
         </div>
 
         {/* Right: actions + finances */}
@@ -339,7 +394,6 @@ export default function App() {
           />
           <FinancePanel
             financeState={financeState}
-            onSetSavingsGoal={setSavingsGoal}
             onNavigateMinigame={() => setView(VIEWS.MINIGAME)}
             onNavigateReport={() => setView(VIEWS.REPORT)}
           />
@@ -356,9 +410,7 @@ export default function App() {
                 ? 'border-[#6bcb77] bg-[#6bcb77] text-[#1a1828]'
                 : toast.type === 'error'
                   ? 'border-[#ff6b6b] bg-[#ff6b6b] text-white'
-                  : toast.type === 'badge'
-                    ? 'border-[#c77dff] bg-[#c77dff] text-white'
-                    : 'border-white/10 bg-[#252338] text-white'
+                  :'border-white/10 bg-[#252338] text-white'
             }`}
           >
             {toast.message}

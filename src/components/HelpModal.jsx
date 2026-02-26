@@ -3,22 +3,8 @@
  * Props: isOpen, onClose
  */
 import { useState } from 'react';
-import { BADGES } from '../data/badges';
 
-const BADGE_HINTS = {
-  first_meal: 'Start with a simple meal.',
-  doctors_orders: 'Schedule a health visit early.',
-  joy_maximizer: 'Find ways to keep happiness high.',
-  glow_up: 'Stick with the routine until the next stage.',
-  full_grown: 'See the journey through to the end.',
-  penny_pincher: 'Save more than you spend.',
-  minigame_master: 'Play the minigame consistently.',
-  peak_performance: 'Balance every stat at once.',
-  trick_master: 'Teach multiple tricks over time.',
-  responsible_owner: 'Keep health safe for the whole session.'
-};
-
-const TABS = ['Objective', 'How to Play', 'Stats Guide', 'Finance Guide', 'Minigames', 'Badges', 'Tips'];
+const TABS = ['Objective', 'How to Play', 'Stats Guide', 'Finance Guide', 'Minigames', 'Tips'];
 
 export default function HelpModal({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('Objective');
@@ -148,21 +134,7 @@ export default function HelpModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {activeTab === 'Badges' && (
-            <div className="space-y-2">
-              {BADGES.map((badge) => (
-                <div key={badge.id} className="rounded-xl border border-white/10 bg-[#252338] p-3">
-                  <div className="flex items-center gap-2">
-                    <span>{badge.emoji}</span>
-                    <span className="text-white">{badge.name}</span>
-                  </div>
-                  <p className="mt-1 text-xs">Hint: {BADGE_HINTS[badge.id] || 'Keep playing to discover this.'}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'Tips' && (
+{activeTab === 'Tips' && (
             <div className="space-y-3">
               <p>Prioritize health above all - it determines your weekly salary and final score.</p>
               <p>Schedule vet visits early. Waiting until health is critical wastes multiple salary cycles.</p>

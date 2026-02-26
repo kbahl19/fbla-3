@@ -144,7 +144,7 @@ function shuffle(arr) {
   return a;
 }
 
-const getEarnings = (correct) => correct * 2;
+const getEarnings = (correct) => correct * 10;
 
 export default function BudgetBlitz({ onFinish, onBack }) {
   const questions = useMemo(() => generateQuestions(), []);
